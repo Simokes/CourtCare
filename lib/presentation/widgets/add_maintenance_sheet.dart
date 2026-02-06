@@ -22,7 +22,8 @@ class AddMaintenanceSheet extends ConsumerStatefulWidget {
       _AddMaintenanceSheetState();
 }
 
-class _AddMaintenanceSheetState extends ConsumerState<AddMaintenanceSheet> {
+class _AddMaintenanceSheetState
+    extends ConsumerState<AddMaintenanceSheet> {
   String? selectedType;
 
   late final TextEditingController commentController;
@@ -65,7 +66,9 @@ class _AddMaintenanceSheetState extends ConsumerState<AddMaintenanceSheet> {
   Future<void> _saveMaintenance() async {
     if (selectedType == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Veuillez choisir un type de maintenance')),
+        const SnackBar(
+          content: Text('Veuillez choisir un type de maintenance'),
+        ),
       );
       return;
     }
@@ -77,13 +80,18 @@ class _AddMaintenanceSheetState extends ConsumerState<AddMaintenanceSheet> {
       type: selectedType!,
       commentaire: commentController.text,
       date: DateTime.now(),
-      sacsMantoUtilises: widget.terrainType == TerrainType.terreBattue
-          ? (int.tryParse(sacsMantoController.text) ?? 0) 
-          : int.tryParse(sacsSiliceController.text) ?? 0,
-        sacsSottomantoUtilises: widget.terrainType == TerrainType.terreBattue
-          ? (int.tryParse(sacsSottomantoController.text) ?? 0) 
-          : int.tryParse(sacsSiliceController.text) ?? 0,
-      sacsSableUtilises: 0,
+      sacsMantoUtilises:
+          widget.terrainType == TerrainType.terreBattue && _showSacs
+              ? int.tryParse(sacsMantoController.text) ?? 0
+              : 0,
+      sacsSottomantoUtilises:
+          widget.terrainType == TerrainType.terreBattue && _showSacs
+              ? int.tryParse(sacsSottomantoController.text) ?? 0
+              : 0,
+      sacsSiliceUtilises:
+          widget.terrainType == TerrainType.synthetique && _showSacs
+              ? int.tryParse(sacsSiliceController.text) ?? 0
+              : 0,
     );
 
     ref.invalidate(

@@ -22,13 +22,14 @@ part 'app_database.g.dart';
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
+  @override
+int get schemaVersion => 3;
 
-  @override
-  int get schemaVersion => 2;
-  @override
+
+ @override
 MigrationStrategy get migration => MigrationStrategy(
   onUpgrade: (migrator, from, to) async {
-    if (from == 1) {
+    if (from < 3) {
       await migrator.addColumn(
         maintenances,
         maintenances.sacsMantoUtilises,
@@ -36,13 +37,15 @@ MigrationStrategy get migration => MigrationStrategy(
       await migrator.addColumn(
         maintenances,
         maintenances.sacsSottomantoUtilises,
-      ); await migrator.addColumn(
+      );
+      await migrator.addColumn(
         maintenances,
         maintenances.sacsSiliceUtilises,
       );
     }
   },
 );
+
   // ------------------- SEED TERRAINS -------------------
   Future<void> seedTerrains() async {
     final existing = await select(terrainTable).get();
@@ -77,7 +80,7 @@ MigrationStrategy get migration => MigrationStrategy(
     String? commentaire,
     int sacsMantoUtilises = 0,
     int sacsSottomantoUtilises = 0,
-    int sacsSableUtilises = 0,
+    int sacsSiliceUtilises = 0,
     required DateTime date,
   }) async {
     await into(maintenances).insert(
@@ -88,7 +91,7 @@ MigrationStrategy get migration => MigrationStrategy(
         date: date,
         sacsMantoUtilises: Value(sacsMantoUtilises),
         sacsSottomantoUtilises: Value(sacsSottomantoUtilises),
-        sacsSiliceUtilises: Value(sacsSableUtilises),
+        sacsSiliceUtilises: Value(sacsSiliceUtilises),
       ),
     );
   }
