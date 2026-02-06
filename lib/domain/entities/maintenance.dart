@@ -5,8 +5,9 @@ class Maintenance {
   final String? commentaire;
   final DateTime date;
 
-  final int sacsTerreUtilises; // manto + sottomanto OU silice
-  final int sacsSableUtilises;
+  final int sacsMantoUtilises;
+  final int sacsSottomantoUtilises;
+  final int sacsSiliceUtilises;
 
   Maintenance({
     required this.id,
@@ -14,7 +15,8 @@ class Maintenance {
     required this.type,
     this.commentaire,
     required this.date,
-    required this.sacsTerreUtilises,
-    required this.sacsSableUtilises,
+    this.sacsMantoUtilises = 0,
+    this.sacsSottomantoUtilises = 0,
+    this.sacsSiliceUtilises = 0,
   });
 }

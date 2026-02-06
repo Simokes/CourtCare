@@ -77,9 +77,11 @@ class _AddMaintenanceSheetState extends ConsumerState<AddMaintenanceSheet> {
       type: selectedType!,
       commentaire: commentController.text,
       date: DateTime.now(),
-      sacsTerreUtilises: widget.terrainType == TerrainType.terreBattue
-          ? (int.tryParse(sacsMantoController.text) ?? 0) +
-              (int.tryParse(sacsSottomantoController.text) ?? 0)
+      sacsMantoUtilises: widget.terrainType == TerrainType.terreBattue
+          ? (int.tryParse(sacsMantoController.text) ?? 0) 
+          : int.tryParse(sacsSiliceController.text) ?? 0,
+        sacsSottomantoUtilises: widget.terrainType == TerrainType.terreBattue
+          ? (int.tryParse(sacsSottomantoController.text) ?? 0) 
           : int.tryParse(sacsSiliceController.text) ?? 0,
       sacsSableUtilises: 0,
     );

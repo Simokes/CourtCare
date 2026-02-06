@@ -296,19 +296,27 @@ class $MaintenancesTable extends Maintenances
   late final GeneratedColumn<DateTime> date = GeneratedColumn<DateTime>(
       'date', aliasedName, false,
       type: DriftSqlType.dateTime, requiredDuringInsert: true);
-  static const VerificationMeta _sacsTerreUtilisesMeta =
-      const VerificationMeta('sacsTerreUtilises');
+  static const VerificationMeta _sacsMantoUtilisesMeta =
+      const VerificationMeta('sacsMantoUtilises');
   @override
-  late final GeneratedColumn<int> sacsTerreUtilises = GeneratedColumn<int>(
-      'sacs_terre_utilises', aliasedName, false,
+  late final GeneratedColumn<int> sacsMantoUtilises = GeneratedColumn<int>(
+      'sacs_manto_utilises', aliasedName, false,
       type: DriftSqlType.int,
       requiredDuringInsert: false,
       defaultValue: const Constant(0));
-  static const VerificationMeta _sacsSableUtilisesMeta =
-      const VerificationMeta('sacsSableUtilises');
+  static const VerificationMeta _sacsSottomantoUtilisesMeta =
+      const VerificationMeta('sacsSottomantoUtilises');
   @override
-  late final GeneratedColumn<int> sacsSableUtilises = GeneratedColumn<int>(
-      'sacs_sable_utilises', aliasedName, false,
+  late final GeneratedColumn<int> sacsSottomantoUtilises = GeneratedColumn<int>(
+      'sacs_sottomanto_utilises', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(0));
+  static const VerificationMeta _sacsSiliceUtilisesMeta =
+      const VerificationMeta('sacsSiliceUtilises');
+  @override
+  late final GeneratedColumn<int> sacsSiliceUtilises = GeneratedColumn<int>(
+      'sacs_silice_utilises', aliasedName, false,
       type: DriftSqlType.int,
       requiredDuringInsert: false,
       defaultValue: const Constant(0));
@@ -319,8 +327,9 @@ class $MaintenancesTable extends Maintenances
         type,
         commentaire,
         date,
-        sacsTerreUtilises,
-        sacsSableUtilises
+        sacsMantoUtilises,
+        sacsSottomantoUtilises,
+        sacsSiliceUtilises
       ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -359,17 +368,23 @@ class $MaintenancesTable extends Maintenances
     } else if (isInserting) {
       context.missing(_dateMeta);
     }
-    if (data.containsKey('sacs_terre_utilises')) {
+    if (data.containsKey('sacs_manto_utilises')) {
       context.handle(
-          _sacsTerreUtilisesMeta,
-          sacsTerreUtilises.isAcceptableOrUnknown(
-              data['sacs_terre_utilises']!, _sacsTerreUtilisesMeta));
+          _sacsMantoUtilisesMeta,
+          sacsMantoUtilises.isAcceptableOrUnknown(
+              data['sacs_manto_utilises']!, _sacsMantoUtilisesMeta));
     }
-    if (data.containsKey('sacs_sable_utilises')) {
+    if (data.containsKey('sacs_sottomanto_utilises')) {
       context.handle(
-          _sacsSableUtilisesMeta,
-          sacsSableUtilises.isAcceptableOrUnknown(
-              data['sacs_sable_utilises']!, _sacsSableUtilisesMeta));
+          _sacsSottomantoUtilisesMeta,
+          sacsSottomantoUtilises.isAcceptableOrUnknown(
+              data['sacs_sottomanto_utilises']!, _sacsSottomantoUtilisesMeta));
+    }
+    if (data.containsKey('sacs_silice_utilises')) {
+      context.handle(
+          _sacsSiliceUtilisesMeta,
+          sacsSiliceUtilises.isAcceptableOrUnknown(
+              data['sacs_silice_utilises']!, _sacsSiliceUtilisesMeta));
     }
     return context;
   }
@@ -390,10 +405,13 @@ class $MaintenancesTable extends Maintenances
           .read(DriftSqlType.string, data['${effectivePrefix}commentaire']),
       date: attachedDatabase.typeMapping
           .read(DriftSqlType.dateTime, data['${effectivePrefix}date'])!,
-      sacsTerreUtilises: attachedDatabase.typeMapping.read(
-          DriftSqlType.int, data['${effectivePrefix}sacs_terre_utilises'])!,
-      sacsSableUtilises: attachedDatabase.typeMapping.read(
-          DriftSqlType.int, data['${effectivePrefix}sacs_sable_utilises'])!,
+      sacsMantoUtilises: attachedDatabase.typeMapping.read(
+          DriftSqlType.int, data['${effectivePrefix}sacs_manto_utilises'])!,
+      sacsSottomantoUtilises: attachedDatabase.typeMapping.read(
+          DriftSqlType.int,
+          data['${effectivePrefix}sacs_sottomanto_utilises'])!,
+      sacsSiliceUtilises: attachedDatabase.typeMapping.read(
+          DriftSqlType.int, data['${effectivePrefix}sacs_silice_utilises'])!,
     );
   }
 
@@ -410,16 +428,18 @@ class MaintenanceEntity extends DataClass
   final String type;
   final String? commentaire;
   final DateTime date;
-  final int sacsTerreUtilises;
-  final int sacsSableUtilises;
+  final int sacsMantoUtilises;
+  final int sacsSottomantoUtilises;
+  final int sacsSiliceUtilises;
   const MaintenanceEntity(
       {required this.id,
       required this.terrainId,
       required this.type,
       this.commentaire,
       required this.date,
-      required this.sacsTerreUtilises,
-      required this.sacsSableUtilises});
+      required this.sacsMantoUtilises,
+      required this.sacsSottomantoUtilises,
+      required this.sacsSiliceUtilises});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -430,8 +450,9 @@ class MaintenanceEntity extends DataClass
       map['commentaire'] = Variable<String>(commentaire);
     }
     map['date'] = Variable<DateTime>(date);
-    map['sacs_terre_utilises'] = Variable<int>(sacsTerreUtilises);
-    map['sacs_sable_utilises'] = Variable<int>(sacsSableUtilises);
+    map['sacs_manto_utilises'] = Variable<int>(sacsMantoUtilises);
+    map['sacs_sottomanto_utilises'] = Variable<int>(sacsSottomantoUtilises);
+    map['sacs_silice_utilises'] = Variable<int>(sacsSiliceUtilises);
     return map;
   }
 
@@ -444,8 +465,9 @@ class MaintenanceEntity extends DataClass
           ? const Value.absent()
           : Value(commentaire),
       date: Value(date),
-      sacsTerreUtilises: Value(sacsTerreUtilises),
-      sacsSableUtilises: Value(sacsSableUtilises),
+      sacsMantoUtilises: Value(sacsMantoUtilises),
+      sacsSottomantoUtilises: Value(sacsSottomantoUtilises),
+      sacsSiliceUtilises: Value(sacsSiliceUtilises),
     );
   }
 
@@ -458,8 +480,10 @@ class MaintenanceEntity extends DataClass
       type: serializer.fromJson<String>(json['type']),
       commentaire: serializer.fromJson<String?>(json['commentaire']),
       date: serializer.fromJson<DateTime>(json['date']),
-      sacsTerreUtilises: serializer.fromJson<int>(json['sacsTerreUtilises']),
-      sacsSableUtilises: serializer.fromJson<int>(json['sacsSableUtilises']),
+      sacsMantoUtilises: serializer.fromJson<int>(json['sacsMantoUtilises']),
+      sacsSottomantoUtilises:
+          serializer.fromJson<int>(json['sacsSottomantoUtilises']),
+      sacsSiliceUtilises: serializer.fromJson<int>(json['sacsSiliceUtilises']),
     );
   }
   @override
@@ -471,8 +495,9 @@ class MaintenanceEntity extends DataClass
       'type': serializer.toJson<String>(type),
       'commentaire': serializer.toJson<String?>(commentaire),
       'date': serializer.toJson<DateTime>(date),
-      'sacsTerreUtilises': serializer.toJson<int>(sacsTerreUtilises),
-      'sacsSableUtilises': serializer.toJson<int>(sacsSableUtilises),
+      'sacsMantoUtilises': serializer.toJson<int>(sacsMantoUtilises),
+      'sacsSottomantoUtilises': serializer.toJson<int>(sacsSottomantoUtilises),
+      'sacsSiliceUtilises': serializer.toJson<int>(sacsSiliceUtilises),
     };
   }
 
@@ -482,16 +507,19 @@ class MaintenanceEntity extends DataClass
           String? type,
           Value<String?> commentaire = const Value.absent(),
           DateTime? date,
-          int? sacsTerreUtilises,
-          int? sacsSableUtilises}) =>
+          int? sacsMantoUtilises,
+          int? sacsSottomantoUtilises,
+          int? sacsSiliceUtilises}) =>
       MaintenanceEntity(
         id: id ?? this.id,
         terrainId: terrainId ?? this.terrainId,
         type: type ?? this.type,
         commentaire: commentaire.present ? commentaire.value : this.commentaire,
         date: date ?? this.date,
-        sacsTerreUtilises: sacsTerreUtilises ?? this.sacsTerreUtilises,
-        sacsSableUtilises: sacsSableUtilises ?? this.sacsSableUtilises,
+        sacsMantoUtilises: sacsMantoUtilises ?? this.sacsMantoUtilises,
+        sacsSottomantoUtilises:
+            sacsSottomantoUtilises ?? this.sacsSottomantoUtilises,
+        sacsSiliceUtilises: sacsSiliceUtilises ?? this.sacsSiliceUtilises,
       );
   MaintenanceEntity copyWithCompanion(MaintenancesCompanion data) {
     return MaintenanceEntity(
@@ -501,12 +529,15 @@ class MaintenanceEntity extends DataClass
       commentaire:
           data.commentaire.present ? data.commentaire.value : this.commentaire,
       date: data.date.present ? data.date.value : this.date,
-      sacsTerreUtilises: data.sacsTerreUtilises.present
-          ? data.sacsTerreUtilises.value
-          : this.sacsTerreUtilises,
-      sacsSableUtilises: data.sacsSableUtilises.present
-          ? data.sacsSableUtilises.value
-          : this.sacsSableUtilises,
+      sacsMantoUtilises: data.sacsMantoUtilises.present
+          ? data.sacsMantoUtilises.value
+          : this.sacsMantoUtilises,
+      sacsSottomantoUtilises: data.sacsSottomantoUtilises.present
+          ? data.sacsSottomantoUtilises.value
+          : this.sacsSottomantoUtilises,
+      sacsSiliceUtilises: data.sacsSiliceUtilises.present
+          ? data.sacsSiliceUtilises.value
+          : this.sacsSiliceUtilises,
     );
   }
 
@@ -518,15 +549,16 @@ class MaintenanceEntity extends DataClass
           ..write('type: $type, ')
           ..write('commentaire: $commentaire, ')
           ..write('date: $date, ')
-          ..write('sacsTerreUtilises: $sacsTerreUtilises, ')
-          ..write('sacsSableUtilises: $sacsSableUtilises')
+          ..write('sacsMantoUtilises: $sacsMantoUtilises, ')
+          ..write('sacsSottomantoUtilises: $sacsSottomantoUtilises, ')
+          ..write('sacsSiliceUtilises: $sacsSiliceUtilises')
           ..write(')'))
         .toString();
   }
 
   @override
   int get hashCode => Object.hash(id, terrainId, type, commentaire, date,
-      sacsTerreUtilises, sacsSableUtilises);
+      sacsMantoUtilises, sacsSottomantoUtilises, sacsSiliceUtilises);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -536,8 +568,9 @@ class MaintenanceEntity extends DataClass
           other.type == this.type &&
           other.commentaire == this.commentaire &&
           other.date == this.date &&
-          other.sacsTerreUtilises == this.sacsTerreUtilises &&
-          other.sacsSableUtilises == this.sacsSableUtilises);
+          other.sacsMantoUtilises == this.sacsMantoUtilises &&
+          other.sacsSottomantoUtilises == this.sacsSottomantoUtilises &&
+          other.sacsSiliceUtilises == this.sacsSiliceUtilises);
 }
 
 class MaintenancesCompanion extends UpdateCompanion<MaintenanceEntity> {
@@ -546,16 +579,18 @@ class MaintenancesCompanion extends UpdateCompanion<MaintenanceEntity> {
   final Value<String> type;
   final Value<String?> commentaire;
   final Value<DateTime> date;
-  final Value<int> sacsTerreUtilises;
-  final Value<int> sacsSableUtilises;
+  final Value<int> sacsMantoUtilises;
+  final Value<int> sacsSottomantoUtilises;
+  final Value<int> sacsSiliceUtilises;
   const MaintenancesCompanion({
     this.id = const Value.absent(),
     this.terrainId = const Value.absent(),
     this.type = const Value.absent(),
     this.commentaire = const Value.absent(),
     this.date = const Value.absent(),
-    this.sacsTerreUtilises = const Value.absent(),
-    this.sacsSableUtilises = const Value.absent(),
+    this.sacsMantoUtilises = const Value.absent(),
+    this.sacsSottomantoUtilises = const Value.absent(),
+    this.sacsSiliceUtilises = const Value.absent(),
   });
   MaintenancesCompanion.insert({
     this.id = const Value.absent(),
@@ -563,8 +598,9 @@ class MaintenancesCompanion extends UpdateCompanion<MaintenanceEntity> {
     required String type,
     this.commentaire = const Value.absent(),
     required DateTime date,
-    this.sacsTerreUtilises = const Value.absent(),
-    this.sacsSableUtilises = const Value.absent(),
+    this.sacsMantoUtilises = const Value.absent(),
+    this.sacsSottomantoUtilises = const Value.absent(),
+    this.sacsSiliceUtilises = const Value.absent(),
   })  : terrainId = Value(terrainId),
         type = Value(type),
         date = Value(date);
@@ -574,8 +610,9 @@ class MaintenancesCompanion extends UpdateCompanion<MaintenanceEntity> {
     Expression<String>? type,
     Expression<String>? commentaire,
     Expression<DateTime>? date,
-    Expression<int>? sacsTerreUtilises,
-    Expression<int>? sacsSableUtilises,
+    Expression<int>? sacsMantoUtilises,
+    Expression<int>? sacsSottomantoUtilises,
+    Expression<int>? sacsSiliceUtilises,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -583,8 +620,11 @@ class MaintenancesCompanion extends UpdateCompanion<MaintenanceEntity> {
       if (type != null) 'type': type,
       if (commentaire != null) 'commentaire': commentaire,
       if (date != null) 'date': date,
-      if (sacsTerreUtilises != null) 'sacs_terre_utilises': sacsTerreUtilises,
-      if (sacsSableUtilises != null) 'sacs_sable_utilises': sacsSableUtilises,
+      if (sacsMantoUtilises != null) 'sacs_manto_utilises': sacsMantoUtilises,
+      if (sacsSottomantoUtilises != null)
+        'sacs_sottomanto_utilises': sacsSottomantoUtilises,
+      if (sacsSiliceUtilises != null)
+        'sacs_silice_utilises': sacsSiliceUtilises,
     });
   }
 
@@ -594,16 +634,19 @@ class MaintenancesCompanion extends UpdateCompanion<MaintenanceEntity> {
       Value<String>? type,
       Value<String?>? commentaire,
       Value<DateTime>? date,
-      Value<int>? sacsTerreUtilises,
-      Value<int>? sacsSableUtilises}) {
+      Value<int>? sacsMantoUtilises,
+      Value<int>? sacsSottomantoUtilises,
+      Value<int>? sacsSiliceUtilises}) {
     return MaintenancesCompanion(
       id: id ?? this.id,
       terrainId: terrainId ?? this.terrainId,
       type: type ?? this.type,
       commentaire: commentaire ?? this.commentaire,
       date: date ?? this.date,
-      sacsTerreUtilises: sacsTerreUtilises ?? this.sacsTerreUtilises,
-      sacsSableUtilises: sacsSableUtilises ?? this.sacsSableUtilises,
+      sacsMantoUtilises: sacsMantoUtilises ?? this.sacsMantoUtilises,
+      sacsSottomantoUtilises:
+          sacsSottomantoUtilises ?? this.sacsSottomantoUtilises,
+      sacsSiliceUtilises: sacsSiliceUtilises ?? this.sacsSiliceUtilises,
     );
   }
 
@@ -625,11 +668,15 @@ class MaintenancesCompanion extends UpdateCompanion<MaintenanceEntity> {
     if (date.present) {
       map['date'] = Variable<DateTime>(date.value);
     }
-    if (sacsTerreUtilises.present) {
-      map['sacs_terre_utilises'] = Variable<int>(sacsTerreUtilises.value);
+    if (sacsMantoUtilises.present) {
+      map['sacs_manto_utilises'] = Variable<int>(sacsMantoUtilises.value);
     }
-    if (sacsSableUtilises.present) {
-      map['sacs_sable_utilises'] = Variable<int>(sacsSableUtilises.value);
+    if (sacsSottomantoUtilises.present) {
+      map['sacs_sottomanto_utilises'] =
+          Variable<int>(sacsSottomantoUtilises.value);
+    }
+    if (sacsSiliceUtilises.present) {
+      map['sacs_silice_utilises'] = Variable<int>(sacsSiliceUtilises.value);
     }
     return map;
   }
@@ -642,8 +689,9 @@ class MaintenancesCompanion extends UpdateCompanion<MaintenanceEntity> {
           ..write('type: $type, ')
           ..write('commentaire: $commentaire, ')
           ..write('date: $date, ')
-          ..write('sacsTerreUtilises: $sacsTerreUtilises, ')
-          ..write('sacsSableUtilises: $sacsSableUtilises')
+          ..write('sacsMantoUtilises: $sacsMantoUtilises, ')
+          ..write('sacsSottomantoUtilises: $sacsSottomantoUtilises, ')
+          ..write('sacsSiliceUtilises: $sacsSiliceUtilises')
           ..write(')'))
         .toString();
   }
@@ -821,8 +869,9 @@ typedef $$MaintenancesTableCreateCompanionBuilder = MaintenancesCompanion
   required String type,
   Value<String?> commentaire,
   required DateTime date,
-  Value<int> sacsTerreUtilises,
-  Value<int> sacsSableUtilises,
+  Value<int> sacsMantoUtilises,
+  Value<int> sacsSottomantoUtilises,
+  Value<int> sacsSiliceUtilises,
 });
 typedef $$MaintenancesTableUpdateCompanionBuilder = MaintenancesCompanion
     Function({
@@ -831,8 +880,9 @@ typedef $$MaintenancesTableUpdateCompanionBuilder = MaintenancesCompanion
   Value<String> type,
   Value<String?> commentaire,
   Value<DateTime> date,
-  Value<int> sacsTerreUtilises,
-  Value<int> sacsSableUtilises,
+  Value<int> sacsMantoUtilises,
+  Value<int> sacsSottomantoUtilises,
+  Value<int> sacsSiliceUtilises,
 });
 
 class $$MaintenancesTableFilterComposer
@@ -859,12 +909,16 @@ class $$MaintenancesTableFilterComposer
   ColumnFilters<DateTime> get date => $composableBuilder(
       column: $table.date, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<int> get sacsTerreUtilises => $composableBuilder(
-      column: $table.sacsTerreUtilises,
+  ColumnFilters<int> get sacsMantoUtilises => $composableBuilder(
+      column: $table.sacsMantoUtilises,
       builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<int> get sacsSableUtilises => $composableBuilder(
-      column: $table.sacsSableUtilises,
+  ColumnFilters<int> get sacsSottomantoUtilises => $composableBuilder(
+      column: $table.sacsSottomantoUtilises,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get sacsSiliceUtilises => $composableBuilder(
+      column: $table.sacsSiliceUtilises,
       builder: (column) => ColumnFilters(column));
 }
 
@@ -892,12 +946,16 @@ class $$MaintenancesTableOrderingComposer
   ColumnOrderings<DateTime> get date => $composableBuilder(
       column: $table.date, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<int> get sacsTerreUtilises => $composableBuilder(
-      column: $table.sacsTerreUtilises,
+  ColumnOrderings<int> get sacsMantoUtilises => $composableBuilder(
+      column: $table.sacsMantoUtilises,
       builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<int> get sacsSableUtilises => $composableBuilder(
-      column: $table.sacsSableUtilises,
+  ColumnOrderings<int> get sacsSottomantoUtilises => $composableBuilder(
+      column: $table.sacsSottomantoUtilises,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get sacsSiliceUtilises => $composableBuilder(
+      column: $table.sacsSiliceUtilises,
       builder: (column) => ColumnOrderings(column));
 }
 
@@ -925,11 +983,14 @@ class $$MaintenancesTableAnnotationComposer
   GeneratedColumn<DateTime> get date =>
       $composableBuilder(column: $table.date, builder: (column) => column);
 
-  GeneratedColumn<int> get sacsTerreUtilises => $composableBuilder(
-      column: $table.sacsTerreUtilises, builder: (column) => column);
+  GeneratedColumn<int> get sacsMantoUtilises => $composableBuilder(
+      column: $table.sacsMantoUtilises, builder: (column) => column);
 
-  GeneratedColumn<int> get sacsSableUtilises => $composableBuilder(
-      column: $table.sacsSableUtilises, builder: (column) => column);
+  GeneratedColumn<int> get sacsSottomantoUtilises => $composableBuilder(
+      column: $table.sacsSottomantoUtilises, builder: (column) => column);
+
+  GeneratedColumn<int> get sacsSiliceUtilises => $composableBuilder(
+      column: $table.sacsSiliceUtilises, builder: (column) => column);
 }
 
 class $$MaintenancesTableTableManager extends RootTableManager<
@@ -963,8 +1024,9 @@ class $$MaintenancesTableTableManager extends RootTableManager<
             Value<String> type = const Value.absent(),
             Value<String?> commentaire = const Value.absent(),
             Value<DateTime> date = const Value.absent(),
-            Value<int> sacsTerreUtilises = const Value.absent(),
-            Value<int> sacsSableUtilises = const Value.absent(),
+            Value<int> sacsMantoUtilises = const Value.absent(),
+            Value<int> sacsSottomantoUtilises = const Value.absent(),
+            Value<int> sacsSiliceUtilises = const Value.absent(),
           }) =>
               MaintenancesCompanion(
             id: id,
@@ -972,8 +1034,9 @@ class $$MaintenancesTableTableManager extends RootTableManager<
             type: type,
             commentaire: commentaire,
             date: date,
-            sacsTerreUtilises: sacsTerreUtilises,
-            sacsSableUtilises: sacsSableUtilises,
+            sacsMantoUtilises: sacsMantoUtilises,
+            sacsSottomantoUtilises: sacsSottomantoUtilises,
+            sacsSiliceUtilises: sacsSiliceUtilises,
           ),
           createCompanionCallback: ({
             Value<int> id = const Value.absent(),
@@ -981,8 +1044,9 @@ class $$MaintenancesTableTableManager extends RootTableManager<
             required String type,
             Value<String?> commentaire = const Value.absent(),
             required DateTime date,
-            Value<int> sacsTerreUtilises = const Value.absent(),
-            Value<int> sacsSableUtilises = const Value.absent(),
+            Value<int> sacsMantoUtilises = const Value.absent(),
+            Value<int> sacsSottomantoUtilises = const Value.absent(),
+            Value<int> sacsSiliceUtilises = const Value.absent(),
           }) =>
               MaintenancesCompanion.insert(
             id: id,
@@ -990,8 +1054,9 @@ class $$MaintenancesTableTableManager extends RootTableManager<
             type: type,
             commentaire: commentaire,
             date: date,
-            sacsTerreUtilises: sacsTerreUtilises,
-            sacsSableUtilises: sacsSableUtilises,
+            sacsMantoUtilises: sacsMantoUtilises,
+            sacsSottomantoUtilises: sacsSottomantoUtilises,
+            sacsSiliceUtilises: sacsSiliceUtilises,
           ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))

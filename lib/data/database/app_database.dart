@@ -31,11 +31,14 @@ MigrationStrategy get migration => MigrationStrategy(
     if (from == 1) {
       await migrator.addColumn(
         maintenances,
-        maintenances.sacsTerreUtilises,
+        maintenances.sacsMantoUtilises,
       );
       await migrator.addColumn(
         maintenances,
-        maintenances.sacsSableUtilises,
+        maintenances.sacsSottomantoUtilises,
+      ); await migrator.addColumn(
+        maintenances,
+        maintenances.sacsSiliceUtilises,
       );
     }
   },
@@ -72,7 +75,8 @@ MigrationStrategy get migration => MigrationStrategy(
     required int terrainId,
     required String type,
     String? commentaire,
-    int sacsTerreUtilises = 0,
+    int sacsMantoUtilises = 0,
+    int sacsSottomantoUtilises = 0,
     int sacsSableUtilises = 0,
     required DateTime date,
   }) async {
@@ -82,8 +86,9 @@ MigrationStrategy get migration => MigrationStrategy(
         type: type,
         commentaire: Value(commentaire),
         date: date,
-        sacsTerreUtilises: Value(sacsTerreUtilises),
-        sacsSableUtilises: Value(sacsSableUtilises),
+        sacsMantoUtilises: Value(sacsMantoUtilises),
+        sacsSottomantoUtilises: Value(sacsSottomantoUtilises),
+        sacsSiliceUtilises: Value(sacsSableUtilises),
       ),
     );
   }
@@ -96,15 +101,17 @@ MigrationStrategy get migration => MigrationStrategy(
 
 
     // Conversion MaintenanceEntity -> domain.Maintenance
-    return rows.map((row) => domain.Maintenance(
-      id: row.id,
-      terrainId: row.terrainId,
-      type: row.type,
-      commentaire: row.commentaire,
-      date: row.date,
-      sacsTerreUtilises: row.sacsTerreUtilises ,
-      sacsSableUtilises: row.sacsSableUtilises ,
-    )).toList();
+ return rows.map((row) => domain.Maintenance(
+  id: row.id,
+  terrainId: row.terrainId,
+  type: row.type,
+  commentaire: row.commentaire,
+  date: row.date,
+  sacsMantoUtilises: row.sacsMantoUtilises,
+  sacsSottomantoUtilises: row.sacsSottomantoUtilises,
+  sacsSiliceUtilises: row.sacsSiliceUtilises,
+)).toList();
+
   }
 Future<void> deleteMaintenance(int maintenanceId) async {
   await (delete(maintenances)

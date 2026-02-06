@@ -30,8 +30,9 @@ class MaintenanceTile extends StatelessWidget {
             if (maintenance.commentaire != null &&
                 maintenance.commentaire!.isNotEmpty)
               Text('Commentaire: ${maintenance.commentaire}'),
-              Text('Sacs terre : ${maintenance.sacsTerreUtilises}'),
-              Text('Sacs sable : ${maintenance.sacsSableUtilises}'),
+              Text('Sacs Manto : ${maintenance.sacsMantoUtilises}'),
+              Text('Sacs SottoM : ${maintenance.sacsSottomantoUtilises}'),
+              Text('Sacs sable : ${maintenance.sacsSiliceUtilises}'),
               Text('Date: $dateFormatted'),
           ],
         ),

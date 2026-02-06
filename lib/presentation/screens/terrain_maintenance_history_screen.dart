@@ -42,14 +42,12 @@ class TerrainMaintenanceHistoryScreen extends ConsumerWidget {
               return Dismissible(
                 key: ValueKey(m.id),
                 direction: DismissDirection.endToStart,
-
                 background: Container(
                   alignment: Alignment.centerRight,
                   padding: const EdgeInsets.only(right: 20),
                   color: Colors.red,
                   child: const Icon(Icons.delete, color: Colors.white),
                 ),
-
                 confirmDismiss: (_) async {
                   final result = await showDialog<bool>(
                     context: context,
@@ -74,36 +72,27 @@ class TerrainMaintenanceHistoryScreen extends ConsumerWidget {
                       ],
                     ),
                   );
-
                   return result ?? false;
                 },
-
                 onDismissed: (_) async {
-                  final delete =
-                      ref.read(deleteMaintenanceProvider);
+                  final delete = ref.read(deleteMaintenanceProvider);
                   await delete(m.id);
-
-                  if (context.mounted) {
-                    ref.invalidate(
-                      maintenancesByTerrainProvider(terrain.id),
-                    );
-                  }
+                  ref.invalidate(
+                    maintenancesByTerrainProvider(terrain.id),
+                  );
                 },
-
                 child: Card(
                   elevation: 2,
-                  margin:
-                      const EdgeInsets.symmetric(vertical: 6),
+                  margin: const EdgeInsets.symmetric(vertical: 6),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Padding(
                     padding: const EdgeInsets.all(12),
                     child: Column(
-                      crossAxisAlignment:
-                          CrossAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        /// 🔹 Titre + date
+                        // 🔹 Titre + date
                         Row(
                           mainAxisAlignment:
                               MainAxisAlignment.spaceBetween,
@@ -114,8 +103,7 @@ class TerrainMaintenanceHistoryScreen extends ConsumerWidget {
                                   .textTheme
                                   .titleMedium
                                   ?.copyWith(
-                                    fontWeight:
-                                        FontWeight.bold,
+                                    fontWeight: FontWeight.bold,
                                   ),
                             ),
                             Text(
@@ -132,25 +120,33 @@ class TerrainMaintenanceHistoryScreen extends ConsumerWidget {
 
                         const SizedBox(height: 8),
 
-                        /// 🔹 Quantités
-                        Row(
+                        // 🔹 Quantités
+                        Column(
+                          crossAxisAlignment:
+                              CrossAxisAlignment.start,
                           children: [
-                            if (m.sacsTerreUtilises > 0)
-  _ChipInfo(
-    label: '${m.sacsTerreUtilises} sac(s)',
-    icon: Icons.inventory_2,
-  ),
-
-                            if (m.sacsSableUtilises > 0)
+                            if (m.sacsMantoUtilises > 0)
                               _ChipInfo(
                                 label:
-                                    '${m.sacsSableUtilises} sac(s) sable',
+                                    '${m.sacsMantoUtilises} sac(s) Manto',
+                                icon: Icons.layers,
+                              ),
+                            if (m.sacsSottomantoUtilises > 0)
+                              _ChipInfo(
+                                label:
+                                    '${m.sacsSottomantoUtilises} sac(s) Sottomanto',
+                                icon: Icons.layers_outlined,
+                              ),
+                            if (m.sacsSiliceUtilises > 0)
+                              _ChipInfo(
+                                label:
+                                    '${m.sacsSiliceUtilises} sac(s) Silice',
                                 icon: Icons.grain,
                               ),
                           ],
                         ),
 
-                        /// 🔹 Commentaire
+                        // 🔹 Commentaire
                         if (m.commentaire != null &&
                             m.commentaire!.isNotEmpty) ...[
                           const SizedBox(height: 8),
@@ -194,7 +190,7 @@ class _ChipInfo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(right: 8),
+      padding: const EdgeInsets.only(right: 8, bottom: 4),
       child: Chip(
         avatar: Icon(icon, size: 16),
         label: Text(label),
