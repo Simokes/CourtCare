@@ -28,8 +28,8 @@ class MaintenanceScreen extends ConsumerWidget {
             itemCount: terrains.length,
             itemBuilder: (context, index) {
               final terrain = terrains[index];
-              final maintenancesAsync =
-                  ref.watch(maintenanceProv.maintenanceCountProvider(terrain.id));
+              final maintenancesAsync = ref
+                  .watch(maintenanceProv.maintenanceCountProvider(terrain.id));
 
               return maintenancesAsync.when(
                 loading: () => TerrainCard(

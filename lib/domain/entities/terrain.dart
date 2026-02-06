@@ -7,8 +7,8 @@ enum TerrainStatut {
   ouvert,
   ferme,
   maintenance,
-    pluie, // ajouté
-  gel,   // si tu veux gérer le gel
+  pluie, // ajouté
+  gel, // si tu veux gérer le gel
   travaux, // si tu veux gérer travaux
 }
 

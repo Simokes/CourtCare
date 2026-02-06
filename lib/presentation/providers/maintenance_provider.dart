@@ -12,27 +12,27 @@ class MaintenanceNotifier extends StateNotifier<AsyncValue<void>> {
   final Ref ref;
 
   MaintenanceNotifier(this.ref) : super(const AsyncData(null));
-Future<void> deleteMaintenance({
-  required int maintenanceId,
-  required int terrainId,
-}) async {
-  state = const AsyncLoading();
+  Future<void> deleteMaintenance({
+    required int maintenanceId,
+    required int terrainId,
+  }) async {
+    state = const AsyncLoading();
 
-  try {
-    final db = ref.read(databaseProvider);
+    try {
+      final db = ref.read(databaseProvider);
 
-    await db.deleteMaintenance(maintenanceId);
+      await db.deleteMaintenance(maintenanceId);
 
-    // 🔄 Rafraîchissements
-    ref.invalidate(maintenancesByTerrainProvider(terrainId));
-    ref.invalidate(maintenanceCountProvider(terrainId));
+      // 🔄 Rafraîchissements
+      ref.invalidate(maintenancesByTerrainProvider(terrainId));
+      ref.invalidate(maintenanceCountProvider(terrainId));
 
-    state = const AsyncData(null);
-  } catch (e, st) {
-    state = AsyncError(e, st);
-    rethrow;
+      state = const AsyncData(null);
+    } catch (e, st) {
+      state = AsyncError(e, st);
+      rethrow;
+    }
   }
-}
 
   Future<void> addMaintenance({
     required int terrainId,
@@ -42,9 +42,7 @@ Future<void> deleteMaintenance({
     int sacsMantoUtilises = 0,
     int sacsSottomantoUtilises = 0,
     int sacsSiliceUtilises = 0,
-  }) 
-  
-  async {
+  }) async {
     state = const AsyncLoading();
 
     try {
@@ -61,14 +59,13 @@ Future<void> deleteMaintenance({
       } else if (terrainType == TerrainType.synthetique) {
         silice = sacsSiliceUtilises;
       }
-final bool utiliseSacs =
-    type == 'Recharge' || type == 'Travaux';
+      final bool utiliseSacs = type == 'Recharge' || type == 'Travaux';
 
-if (!utiliseSacs) {
-  manto = 0;
-  sottomanto = 0;
-  silice = 0;
-}
+      if (!utiliseSacs) {
+        manto = 0;
+        sottomanto = 0;
+        silice = 0;
+      }
 
       await db.addMaintenance(
         terrainId: terrainId,
@@ -91,6 +88,7 @@ if (!utiliseSacs) {
     }
   }
 }
+
 final maintenancesByTerrainProvider =
     FutureProvider.family<List<Maintenance>, int>((ref, terrainId) {
   final db = ref.read(databaseProvider);
