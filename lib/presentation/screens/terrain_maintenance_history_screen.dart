@@ -53,20 +53,17 @@ class TerrainMaintenanceHistoryScreen extends ConsumerWidget {
                     context: context,
                     builder: (_) => AlertDialog(
                       title: const Text('Supprimer la maintenance'),
-                      content:
-                          const Text('Cette action est définitive.'),
+                      content: const Text('Cette action est définitive.'),
                       actions: [
                         TextButton(
-                          onPressed: () =>
-                              Navigator.pop(context, false),
+                          onPressed: () => Navigator.pop(context, false),
                           child: const Text('Annuler'),
                         ),
                         ElevatedButton(
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.red,
                           ),
-                          onPressed: () =>
-                              Navigator.pop(context, true),
+                          onPressed: () => Navigator.pop(context, true),
                           child: const Text('Supprimer'),
                         ),
                       ],
@@ -75,11 +72,12 @@ class TerrainMaintenanceHistoryScreen extends ConsumerWidget {
                   return result ?? false;
                 },
                 onDismissed: (_) async {
-                  final delete = ref.read(deleteMaintenanceProvider);
-                  await delete(m.id);
-                  ref.invalidate(
-                    maintenancesByTerrainProvider(terrain.id),
-                  );
+                  await ref
+                      .read(maintenanceProvider.notifier)
+                      .deleteMaintenance(
+                        maintenanceId: m.id,
+                        terrainId: terrain.id,
+                      );
                 },
                 child: Card(
                   elevation: 2,
@@ -94,8 +92,7 @@ class TerrainMaintenanceHistoryScreen extends ConsumerWidget {
                       children: [
                         // 🔹 Titre + date
                         Row(
-                          mainAxisAlignment:
-                              MainAxisAlignment.spaceBetween,
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
                               m.type,
@@ -122,13 +119,11 @@ class TerrainMaintenanceHistoryScreen extends ConsumerWidget {
 
                         // 🔹 Quantités
                         Column(
-                          crossAxisAlignment:
-                              CrossAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             if (m.sacsMantoUtilises > 0)
                               _ChipInfo(
-                                label:
-                                    '${m.sacsMantoUtilises} sac(s) Manto',
+                                label: '${m.sacsMantoUtilises} sac(s) Manto',
                                 icon: Icons.layers,
                               ),
                             if (m.sacsSottomantoUtilises > 0)
@@ -139,8 +134,7 @@ class TerrainMaintenanceHistoryScreen extends ConsumerWidget {
                               ),
                             if (m.sacsSiliceUtilises > 0)
                               _ChipInfo(
-                                label:
-                                    '${m.sacsSiliceUtilises} sac(s) Silice',
+                                label: '${m.sacsSiliceUtilises} sac(s) Silice',
                                 icon: Icons.grain,
                               ),
                           ],
@@ -152,9 +146,7 @@ class TerrainMaintenanceHistoryScreen extends ConsumerWidget {
                           const SizedBox(height: 8),
                           Text(
                             m.commentaire!,
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyMedium,
+                            style: Theme.of(context).textTheme.bodyMedium,
                           ),
                         ],
                       ],

@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/entities/terrain.dart';
 import '../providers/database_provider.dart';
-import '../providers/maintenance_provider.dart' as maintenanceProv;
+import '../providers/maintenance_provider.dart' as maintenance_prov;
 
 class AddMaintenanceSheet extends ConsumerStatefulWidget {
   final int terrainNumero;
@@ -22,8 +22,7 @@ class AddMaintenanceSheet extends ConsumerStatefulWidget {
       _AddMaintenanceSheetState();
 }
 
-class _AddMaintenanceSheetState
-    extends ConsumerState<AddMaintenanceSheet> {
+class _AddMaintenanceSheetState extends ConsumerState<AddMaintenanceSheet> {
   String? selectedType;
 
   late final TextEditingController commentController;
@@ -60,8 +59,7 @@ class _AddMaintenanceSheetState
     super.dispose();
   }
 
-  bool get _showSacs =>
-      selectedType == 'Recharge' || selectedType == 'Travaux';
+  bool get _showSacs => selectedType == 'Recharge' || selectedType == 'Travaux';
 
   Future<void> _saveMaintenance() async {
     if (selectedType == null) {
@@ -73,35 +71,30 @@ class _AddMaintenanceSheetState
       return;
     }
 
-    final db = ref.read(databaseProvider);
+    try {
+      await ref
+          .read(maintenance_prov.maintenanceProvider.notifier)
+          .addMaintenance(
+            terrainId: widget.terrainId,
+            terrainType: widget.terrainType,
+            type: selectedType!,
+            commentaire:
+                commentController.text.isEmpty ? null : commentController.text,
+            sacsMantoUtilises: int.tryParse(sacsMantoController.text) ?? 0,
+            sacsSottomantoUtilises:
+                int.tryParse(sacsSottomantoController.text) ?? 0,
+            sacsSiliceUtilises: int.tryParse(sacsSiliceController.text) ?? 0,
+          );
 
-    await db.addMaintenance(
-      terrainId: widget.terrainId,
-      type: selectedType!,
-      commentaire: commentController.text,
-      date: DateTime.now(),
-      sacsMantoUtilises:
-          widget.terrainType == TerrainType.terreBattue && _showSacs
-              ? int.tryParse(sacsMantoController.text) ?? 0
-              : 0,
-      sacsSottomantoUtilises:
-          widget.terrainType == TerrainType.terreBattue && _showSacs
-              ? int.tryParse(sacsSottomantoController.text) ?? 0
-              : 0,
-      sacsSiliceUtilises:
-          widget.terrainType == TerrainType.synthetique && _showSacs
-              ? int.tryParse(sacsSiliceController.text) ?? 0
-              : 0,
-    );
-
-    ref.invalidate(
-      maintenanceProv.maintenancesByTerrainProvider(widget.terrainId),
-    );
-    ref.invalidate(
-      maintenanceProv.maintenanceCountProvider(widget.terrainId),
-    );
-
-    Navigator.of(context).pop();
+      Navigator.of(context).pop();
+    } catch (e) {
+      debugPrint('❌ Erreur enregistrement : $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Erreur lors de l’enregistrement'),
+        ),
+      );
+    }
   }
 
   @override
@@ -121,7 +114,6 @@ class _AddMaintenanceSheetState
             style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: 12),
-
           DropdownButtonFormField<String>(
             value: selectedType,
             items: maintenanceTypes
@@ -135,42 +127,34 @@ class _AddMaintenanceSheetState
             onChanged: (v) => setState(() => selectedType = v),
             decoration: const InputDecoration(labelText: 'Type'),
           ),
-
           const SizedBox(height: 8),
-
           TextField(
             controller: commentController,
             decoration: const InputDecoration(labelText: 'Commentaire'),
           ),
-
           if (_showSacs) ...[
             const SizedBox(height: 12),
             if (widget.terrainType == TerrainType.terreBattue) ...[
               TextField(
                 controller: sacsMantoController,
                 keyboardType: TextInputType.number,
-                decoration:
-                    const InputDecoration(labelText: 'Sacs Manto'),
+                decoration: const InputDecoration(labelText: 'Sacs Manto'),
               ),
               const SizedBox(height: 8),
               TextField(
                 controller: sacsSottomantoController,
                 keyboardType: TextInputType.number,
-                decoration:
-                    const InputDecoration(labelText: 'Sacs Sottomanto'),
+                decoration: const InputDecoration(labelText: 'Sacs Sottomanto'),
               ),
             ] else ...[
               TextField(
                 controller: sacsSiliceController,
                 keyboardType: TextInputType.number,
-                decoration:
-                    const InputDecoration(labelText: 'Sacs Silice'),
+                decoration: const InputDecoration(labelText: 'Sacs Silice'),
               ),
             ],
           ],
-
           const SizedBox(height: 16),
-
           ElevatedButton(
             onPressed: _saveMaintenance,
             child: const Text('Enregistrer'),
