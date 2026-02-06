@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/entities/terrain.dart';
-import '../providers/database_provider.dart';
 import '../providers/maintenance_provider.dart' as maintenance_prov;
 
 class AddMaintenanceSheet extends ConsumerStatefulWidget {
