@@ -3,6 +3,42 @@ import '../../domain/entities/terrain.dart';
 import '../../domain/entities/maintenance.dart';
 import 'database_provider.dart';
 
+// ============================================================================
+// PROVIDERS GLOBAUX
+// ============================================================================
+
+final maintenancesByTerrainProvider =
+    FutureProvider.family<List<Maintenance>, int>((ref, terrainId) {
+  final db = ref.read(databaseProvider);
+  return db.getMaintenancesForTerrain(terrainId);
+});
+
+final maintenanceCountProvider =
+    FutureProvider.family<int, int>((ref, terrainId) {
+  final db = ref.read(databaseProvider);
+  return db.getMaintenancesCountForDay(
+    terrainId,
+    DateTime.now(),
+  );
+});
+
+// 🔥 LE PROVIDER QUI TE MANQUAIT — À L’EXTÉRIEUR DE LA CLASSE
+final sacsTotalsProvider = FutureProvider.family<
+    ({int manto, int sottomanto, int silice}),
+    ({int terrainId, DateTime start, DateTime end})>((ref, params) async {
+  final db = ref.read(databaseProvider);
+
+  return db.getSacsTotalsForTerrainBetween(
+    params.terrainId,
+    params.start,
+    params.end,
+  );
+});
+
+// ============================================================================
+// NOTIFIER
+// ============================================================================
+
 final maintenanceProvider =
     StateNotifierProvider<MaintenanceNotifier, AsyncValue<void>>(
   (ref) => MaintenanceNotifier(ref),
@@ -12,6 +48,7 @@ class MaintenanceNotifier extends StateNotifier<AsyncValue<void>> {
   final Ref ref;
 
   MaintenanceNotifier(this.ref) : super(const AsyncData(null));
+
   Future<void> deleteMaintenance({
     required int maintenanceId,
     required int terrainId,
@@ -26,6 +63,7 @@ class MaintenanceNotifier extends StateNotifier<AsyncValue<void>> {
       // 🔄 Rafraîchissements
       ref.invalidate(maintenancesByTerrainProvider(terrainId));
       ref.invalidate(maintenanceCountProvider(terrainId));
+      ref.invalidate(sacsTotalsProvider); // optionnel mais utile
 
       state = const AsyncData(null);
     } catch (e, st) {
@@ -48,7 +86,7 @@ class MaintenanceNotifier extends StateNotifier<AsyncValue<void>> {
     try {
       final db = ref.read(databaseProvider);
 
-      // 🔒 RÈGLES MÉTIER VERROUILLÉES
+      // 🔒 RÈGLES MÉTIER
       int manto = 0;
       int sottomanto = 0;
       int silice = 0;
@@ -59,8 +97,8 @@ class MaintenanceNotifier extends StateNotifier<AsyncValue<void>> {
       } else if (terrainType == TerrainType.synthetique) {
         silice = sacsSiliceUtilises;
       }
-      final bool utiliseSacs = type == 'Recharge' || type == 'Travaux';
 
+      final utiliseSacs = type == 'Recharge' || type == 'Travaux';
       if (!utiliseSacs) {
         manto = 0;
         sottomanto = 0;
@@ -80,6 +118,7 @@ class MaintenanceNotifier extends StateNotifier<AsyncValue<void>> {
       // 🔄 Rafraîchissements
       ref.invalidate(maintenancesByTerrainProvider(terrainId));
       ref.invalidate(maintenanceCountProvider(terrainId));
+      ref.invalidate(sacsTotalsProvider);
 
       state = const AsyncData(null);
     } catch (e, st) {
@@ -88,18 +127,3 @@ class MaintenanceNotifier extends StateNotifier<AsyncValue<void>> {
     }
   }
 }
-
-final maintenancesByTerrainProvider =
-    FutureProvider.family<List<Maintenance>, int>((ref, terrainId) {
-  final db = ref.read(databaseProvider);
-  return db.getMaintenancesForTerrain(terrainId);
-});
-
-final maintenanceCountProvider =
-    FutureProvider.family<int, int>((ref, terrainId) {
-  final db = ref.read(databaseProvider);
-  return db.getMaintenancesCountForDay(
-    terrainId,
-    DateTime.now(),
-  );
-});

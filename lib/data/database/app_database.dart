@@ -61,6 +61,36 @@ class AppDatabase extends _$AppDatabase {
       );
     }
   }
+Future<({
+  int manto,
+  int sottomanto,
+  int silice,
+})> getSacsTotalsForTerrainBetween(
+  int terrainId,
+  DateTime start,
+  DateTime end,
+) async {
+  final rows = await (select(maintenances)
+        ..where((m) => m.terrainId.equals(terrainId))
+        ..where((m) => m.date.isBetweenValues(start, end)))
+      .get();
+
+  int manto = 0;
+  int sottomanto = 0;
+  int silice = 0;
+
+  for (final r in rows) {
+    manto += r.sacsMantoUtilises;
+    sottomanto += r.sacsSottomantoUtilises;
+    silice += r.sacsSiliceUtilises;
+  }
+
+  return (
+    manto: manto,
+    sottomanto: sottomanto,
+    silice: silice,
+  );
+}
 
   // ------------------- TERRAINS -------------------
   Future<List<Terrain>> getAllTerrains() async {
