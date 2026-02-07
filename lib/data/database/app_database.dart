@@ -165,7 +165,43 @@ Future<({
     return rows.length;
   }
 }
+// ------------------- REACTIVE TOTALS WATCHERS -------------------
+extension TotalsWatchQueries on AppDatabase {
+  /// Totaux réactifs des sacs pour un terrain et une période (bornes inclusives).
+  /// Émet immédiatement une première valeur, puis à chaque changement (insert/update/delete).
+  Stream<({int manto, int sottomanto, int silice})> watchSacsTotals({
+    required int terrainId,
+    DateTime? start,
+    DateTime? end,
+  }) {
+    final m = maintenances;
 
+    final sumManto = m.sacsMantoUtilises.sum();
+    final sumSotto = m.sacsSottomantoUtilises.sum();
+    final sumSil   = m.sacsSiliceUtilises.sum();
+
+    final q = selectOnly(m)..addColumns([sumManto, sumSotto, sumSil]);
+
+    final predicates = <Expression<bool>>[
+      m.terrainId.equals(terrainId),
+    ];
+    if (start != null) {
+      predicates.add(m.date.isBiggerOrEqualValue(start));
+    }
+    if (end != null) {
+      predicates.add(m.date.isSmallerOrEqualValue(end));
+    }
+    q.where(predicates.reduce((a, b) => a & b));
+
+    // watchSingle() : renvoie 1 ligne d'agrégat ; SUM(...) peut retourner NULL si 0 ligne → coalesce à 0.
+    return q.watchSingle().map((row) {
+      final manto = row.read(sumManto) ?? 0;
+      final sotto = row.read(sumSotto) ?? 0;
+      final sil   = row.read(sumSil)   ?? 0;
+      return (manto: manto, sottomanto: sotto, silice: sil);
+    });
+  }
+}
 // ------------------- DB CONNECTION -------------------
 LazyDatabase _openConnection() {
   return LazyDatabase(() async {

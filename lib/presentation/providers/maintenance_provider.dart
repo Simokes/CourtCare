@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/terrain.dart';
 import '../../domain/entities/maintenance.dart';
 import 'database_provider.dart';
-
+import 'package:court_care/data/database/app_database.dart';
 // ============================================================================
 // PROVIDERS GLOBAUX
 // ============================================================================
@@ -23,36 +23,21 @@ final maintenanceCountProvider =
 });
 
 // 🔥 LE PROVIDER QUI TE MANQUAIT — À L’EXTÉRIEUR DE LA CLASSE
-final sacsTotalsProvider = FutureProvider.family<
+// ✅ Version réactive (Drift watch) — même nom, même signature que ta version actuelle
+final sacsTotalsProvider = StreamProvider.family<
     ({int manto, int sottomanto, int silice}),
     ({int terrainId, DateTime start, DateTime end})>(
-  (ref, params) async {
-    final db = ref.read(databaseProvider);
-
-    final maintenances =
-        await db.getMaintenancesForTerrain(params.terrainId);
-
-    int manto = 0;
-    int sottomanto = 0;
-    int silice = 0;
-
-    for (final m in maintenances) {
-      final d = m.date;
-
-      if (!d.isBefore(params.start) && !d.isAfter(params.end)) {
-        manto += m.sacsMantoUtilises;
-        sottomanto += m.sacsSottomantoUtilises;
-        silice += m.sacsSiliceUtilises;
-      }
-    }
-
-    return (
-      manto: manto,
-      sottomanto: sottomanto,
-      silice: silice,
+  (ref, params) {
+    final db = ref.watch(databaseProvider);
+    return db.watchSacsTotals(
+      terrainId: params.terrainId,
+      start: params.start,
+      end: params.end,
     );
   },
 );
+
+
 
 
 

@@ -12,36 +12,48 @@ class TerrainMaintenanceHistoryScreen extends ConsumerWidget {
     required this.terrain,
   });
 
-  // -------------------------
-  // HELPERS
-  // -------------------------
-  DateTime startOfDay(DateTime d) => DateTime(d.year, d.month, d.day);
+ // -------------------------
+// HELPERS
+// -------------------------
+DateTime startOfDay(DateTime d) => DateTime(d.year, d.month, d.day);
 
-  DateTime startOfWeek(DateTime d) =>
-      DateTime(d.year, d.month, d.day).subtract(Duration(days: d.weekday - 1));
+// ⬇️ AJOUTE CETTE FONCTION
+DateTime endOfDay(DateTime d) =>
+    DateTime(d.year, d.month, d.day, 23, 59, 59, 999);
+
+DateTime startOfWeek(DateTime d) =>
+    DateTime(d.year, d.month, d.day).subtract(Duration(days: d.weekday - 1));
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final now = DateTime.now();
 
-    final maintenancesAsync =
-        ref.watch(maintenancesByTerrainProvider(terrain.id));
+// ⬇️ bornes stables pour aujourd’hui
+final todayStart = startOfDay(now);
+final todayEnd = endOfDay(now);
 
-    final todayTotals = ref.watch(
-      sacsTotalsProvider((
-        terrainId: terrain.id,
-        start: startOfDay(now),
-        end: now,
-      )),
-    );
+// ⬇️ bornes stables pour la semaine (lundi → fin de journée actuelle)
+final weekStart = startOfWeek(now);
+final weekEnd = endOfDay(now);
 
-    final weekTotals = ref.watch(
-      sacsTotalsProvider((
-        terrainId: terrain.id,
-        start: startOfWeek(now),
-        end: now,
-      )),
-    );
+final maintenancesAsync =
+    ref.watch(maintenancesByTerrainProvider(terrain.id));
+
+final todayTotals = ref.watch(
+  sacsTotalsProvider((
+    terrainId: terrain.id,
+    start: todayStart,
+    end: todayEnd,
+  )),
+);
+
+final weekTotals = ref.watch(
+  sacsTotalsProvider((
+    terrainId: terrain.id,
+    start: weekStart,
+    end: weekEnd,
+  )),
+);
 
     return Scaffold(
       appBar: AppBar(
@@ -55,7 +67,7 @@ class TerrainMaintenanceHistoryScreen extends ConsumerWidget {
           // -------------------------
           Padding(
             padding: const EdgeInsets.all(12),
-            child: Column(
+            child: Row(
               children: [
                 _TotalsCard(
                   context: context,
@@ -304,25 +316,27 @@ class _TotalsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: totals.when(
-          loading: () => const LinearProgressIndicator(),
-          error: (_, __) => const Text('Erreur'),
-          data: (t) => Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(title, style: Theme.of(context).textTheme.titleMedium),
-              const SizedBox(height: 8),
-              if (t.manto > 0) Text('🟤 Manto : ${t.manto} sacs'),
-              if (t.sottomanto > 0)
-                Text('🟠 Sottomanto : ${t.sottomanto} sacs'),
-              if (t.silice > 0) Text('⚪ Silice : ${t.silice} sacs'),
-              if (t.manto + t.sottomanto + t.silice == 0)
-                const Text('Aucune consommation'),
-            ],
+    return Expanded(                   // ⬅️ ajouté
+      child: Card(
+        margin: const EdgeInsets.only(bottom: 12, right: 8),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: totals.when(
+            loading: () => const LinearProgressIndicator(),
+            error: (_, __) => const Text('Erreur'),
+            data: (t) => Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: Theme.of(context).textTheme.titleMedium),
+                const SizedBox(height: 8),
+                if (t.manto > 0) Text('🟤 Manto : ${t.manto} sacs'),
+                if (t.sottomanto > 0)
+                  Text('🟠 Sottomanto : ${t.sottomanto} sacs'),
+                if (t.silice > 0) Text('⚪ Silice : ${t.silice} sacs'),
+                if (t.manto + t.sottomanto + t.silice == 0)
+                  const Text('Aucune consommation'),
+              ],
+            ),
           ),
         ),
       ),
