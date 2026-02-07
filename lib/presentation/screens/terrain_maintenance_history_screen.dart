@@ -12,48 +12,36 @@ class TerrainMaintenanceHistoryScreen extends ConsumerWidget {
     required this.terrain,
   });
 
- // -------------------------
-// HELPERS
-// -------------------------
-DateTime startOfDay(DateTime d) => DateTime(d.year, d.month, d.day);
-
-// ⬇️ AJOUTE CETTE FONCTION
-DateTime endOfDay(DateTime d) =>
-    DateTime(d.year, d.month, d.day, 23, 59, 59, 999);
-
-DateTime startOfWeek(DateTime d) =>
-    DateTime(d.year, d.month, d.day).subtract(Duration(days: d.weekday - 1));
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final now = DateTime.now();
 
 // ⬇️ bornes stables pour aujourd’hui
-final todayStart = startOfDay(now);
-final todayEnd = endOfDay(now);
+    final todayStart = startOfDay(now);
+    final todayEnd = endOfDay(now);
 
 // ⬇️ bornes stables pour la semaine (lundi → fin de journée actuelle)
-final weekStart = startOfWeek(now);
-final weekEnd = endOfDay(now);
+    final weekStart = startOfWeek(now);
+    final weekEnd = endOfDay(now);
 
-final maintenancesAsync =
-    ref.watch(maintenancesByTerrainProvider(terrain.id));
+    final maintenancesAsync =
+        ref.watch(maintenancesByTerrainProvider(terrain.id));
 
-final todayTotals = ref.watch(
-  sacsTotalsProvider((
-    terrainId: terrain.id,
-    start: todayStart,
-    end: todayEnd,
-  )),
-);
+    final todayTotals = ref.watch(
+      sacsTotalsProvider((
+        terrainId: terrain.id,
+        start: todayStart,
+        end: todayEnd,
+      )),
+    );
 
-final weekTotals = ref.watch(
-  sacsTotalsProvider((
-    terrainId: terrain.id,
-    start: weekStart,
-    end: weekEnd,
-  )),
-);
+    final weekTotals = ref.watch(
+      sacsTotalsProvider((
+        terrainId: terrain.id,
+        start: weekStart,
+        end: weekEnd,
+      )),
+    );
 
     return Scaffold(
       appBar: AppBar(
@@ -61,7 +49,6 @@ final weekTotals = ref.watch(
       ),
       body: Column(
         children: [
-          
           // -------------------------
           // TOTALS CARDS
           // -------------------------
@@ -73,7 +60,6 @@ final weekTotals = ref.watch(
                   context: context,
                   title: 'Aujourd’hui',
                   totals: todayTotals,
-                  
                 ),
                 _TotalsCard(
                   context: context,
@@ -89,8 +75,7 @@ final weekTotals = ref.watch(
           // -------------------------
           Expanded(
             child: maintenancesAsync.when(
-              loading: () =>
-                  const Center(child: CircularProgressIndicator()),
+              loading: () => const Center(child: CircularProgressIndicator()),
               error: (err, _) => Center(child: Text('Erreur : $err')),
               data: (maintenances) {
                 if (maintenances.isEmpty) {
@@ -316,7 +301,8 @@ class _TotalsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(                   // ⬅️ ajouté
+    return Expanded(
+      // ⬅️ ajouté
       child: Card(
         margin: const EdgeInsets.only(bottom: 12, right: 8),
         child: Padding(
