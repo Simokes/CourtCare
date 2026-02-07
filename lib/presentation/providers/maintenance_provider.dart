@@ -25,15 +25,34 @@ final maintenanceCountProvider =
 // 🔥 LE PROVIDER QUI TE MANQUAIT — À L’EXTÉRIEUR DE LA CLASSE
 final sacsTotalsProvider = FutureProvider.family<
     ({int manto, int sottomanto, int silice}),
-    ({int terrainId, DateTime start, DateTime end})>((ref, params) async {
-  final db = ref.read(databaseProvider);
+    ({int terrainId, DateTime start, DateTime end})>(
+  (ref, params) async {
+    final db = ref.read(databaseProvider);
 
-  return db.getSacsTotalsForTerrainBetween(
-    params.terrainId,
-    params.start,
-    params.end,
-  );
-});
+    final maintenances =
+        await db.getMaintenancesForTerrain(params.terrainId);
+
+    int manto = 0;
+    int sottomanto = 0;
+    int silice = 0;
+
+    for (final m in maintenances) {
+      if (m.date.isAfter(params.start) &&
+          m.date.isBefore(params.end)) {
+        manto += m.sacsMantoUtilises;
+        sottomanto += m.sacsSottomantoUtilises;
+        silice += m.sacsSiliceUtilises;
+      }
+    }
+
+    return (
+      manto: manto,
+      sottomanto: sottomanto,
+      silice: silice,
+    );
+  },
+);
+
 
 // ============================================================================
 // NOTIFIER
