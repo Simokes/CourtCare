@@ -37,8 +37,9 @@ final sacsTotalsProvider = FutureProvider.family<
     int silice = 0;
 
     for (final m in maintenances) {
-      if (m.date.isAfter(params.start) &&
-          m.date.isBefore(params.end)) {
+      final d = m.date;
+
+      if (!d.isBefore(params.start) && !d.isAfter(params.end)) {
         manto += m.sacsMantoUtilises;
         sottomanto += m.sacsSottomantoUtilises;
         silice += m.sacsSiliceUtilises;
@@ -52,6 +53,7 @@ final sacsTotalsProvider = FutureProvider.family<
     );
   },
 );
+
 
 
 // ============================================================================

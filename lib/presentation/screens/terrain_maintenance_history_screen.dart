@@ -49,6 +49,7 @@ class TerrainMaintenanceHistoryScreen extends ConsumerWidget {
       ),
       body: Column(
         children: [
+          
           // -------------------------
           // TOTALS CARDS
           // -------------------------
@@ -60,6 +61,7 @@ class TerrainMaintenanceHistoryScreen extends ConsumerWidget {
                   context: context,
                   title: 'Aujourd’hui',
                   totals: todayTotals,
+                  
                 ),
                 _TotalsCard(
                   context: context,
