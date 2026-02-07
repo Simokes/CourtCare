@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'maintenance_screen.dart';
 import '../providers/maintenance_provider.dart'; // <- pour accéder au provider monthly
+import 'stats_screen.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -37,6 +38,17 @@ class HomeScreen extends ConsumerWidget {
                   MaterialPageRoute(
                     builder: (_) => const MaintenanceScreen(),
                   ),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.bar_chart),
+              title: const Text('Stats'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const StatsScreen()),
                 );
               },
             ),
