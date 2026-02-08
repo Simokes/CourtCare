@@ -98,7 +98,15 @@ class MaintenanceNotifier extends StateNotifier<AsyncValue<void>> {
       // 🔄 Rafraîchissements
       ref.invalidate(maintenancesByTerrainProvider(terrainId));
       ref.invalidate(maintenanceCountProvider(terrainId));
-      ref.invalidate(sacsTotalsProvider); // optionnel mais utile
+
+// Exemple : re-calcule uniquement la clé concernée
+      ref.invalidate(
+        sacsTotalsProvider((
+          terrainId: terrainId,
+          start: startOfDay(DateTime.now()), // ou la période en cours
+          end: endOfDay(DateTime.now()),
+        )),
+      );
 
       state = const AsyncData(null);
     } catch (e, st) {
@@ -108,6 +116,7 @@ class MaintenanceNotifier extends StateNotifier<AsyncValue<void>> {
   }
 
   Future<void> addMaintenance({
+    
     required int terrainId,
     required TerrainType terrainType,
     required String type,

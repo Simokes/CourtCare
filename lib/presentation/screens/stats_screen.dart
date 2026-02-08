@@ -1,10 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:drift/drift.dart' show Variable;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:court_care/presentation/providers/stats_period_provider.dart';
 import 'package:court_care/presentation/providers/selected_terrains_provider.dart';
 import 'package:court_care/presentation/providers/stats_providers.dart';
 import 'package:court_care/presentation/providers/terrain_provider.dart';
 import 'package:court_care/presentation/widgets/grouped_bar_chart.dart';
+import 'package:court_care/presentation/providers/database_provider.dart'
+    show databaseProvider;
+
+import 'package:court_care/presentation/providers/maintenance_provider.dart'
+    hide startOfDay, endOfDay, startOfWeek, startOfMonth, endOfMonth;
+
+import 'package:court_care/domain/entities/terrain.dart'; // pour TerrainType
 
 class StatsScreen extends ConsumerWidget {
   const StatsScreen({super.key});
@@ -17,10 +25,95 @@ class StatsScreen extends ConsumerWidget {
 
     final sacksSeries = ref.watch(sacksSeriesProvider);
     final maintTypesSeries = ref.watch(maintenanceTypesSeriesProvider);
+//TEST
+    ref.listen(sacksSeriesProvider, (prev, next) {
+      next.whenData((points) {
+        debugPrint('[SACKS] points=${points.length} '
+            'range=${period.range.startInclusive} -> ${period.range.endInclusive} '
+            'selected=${selected.isEmpty ? 'ALL' : selected.toList()} '
+            'sum=${points.fold<int>(0, (a, p) => a + p.manto + p.sottomanto + p.silice)}');
+      });
+    });
+
+    ref.listen(maintenanceTypesSeriesProvider, (prev, next) {
+      next.whenData((rows) {
+        debugPrint('[TYPES] rows=${rows.length}');
+      });
+    });
+    ref.listen(sacksSeriesProvider, (_, next) {
+      next.whenData((points) {
+        debugPrint('Sacks: ${points.length} points '
+            'range: ${period.range.startInclusive} -> ${period.range.endInclusive} '
+            'terrains: ${selected.isEmpty ? "ALL" : selected.toList()}');
+      });
+    });
+    //test
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Stats'),
+      appBar: AppBar(title: const Text('Stats')),
+      floatingActionButton: FloatingActionButton.extended(
+        icon: const Icon(Icons.add),
+        label: const Text('Insert dev'),
+        onPressed: () async {
+          try {
+            // 1) Insertion via le Notifier (respecte tes règles métier)
+            await ref.read(maintenanceProvider.notifier).addMaintenance(
+                  terrainId: 1,
+                  terrainType: TerrainType
+                      .terreBattue, // IMPORTANT pour autoriser manto/sotto
+                  type:
+                      'Recharge', // 'Recharge' OU 'Travaux' consomment des sacs
+                  commentaire: 'DEV insert depuis StatsScreen',
+                  sacsMantoUtilises: 2,
+                  sacsSottomantoUtilises: 1,
+                  sacsSiliceUtilises: 0,
+                );
+            debugPrint('DEV: addMaintenance OK');
+
+            // 2) Relire immédiatement ce que la DB contient pour (terrain=1) DANS la fenêtre
+            final db = ref.read(databaseProvider);
+            final rows = await db.customSelect(
+              '''
+        SELECT id, terrain_id, type, date,
+               sacs_manto_utilises AS manto,
+               sacs_sottomanto_utilises AS sotto,
+               sacs_silice_utilises AS sil
+        FROM maintenances
+        WHERE date BETWEEN ? AND ?
+          AND terrain_id = 1
+        ORDER BY date DESC
+        ''',
+              variables: [
+                Variable<int>(
+                    period.range.startInclusive.millisecondsSinceEpoch),
+                Variable<int>(period.range.endInclusive.millisecondsSinceEpoch),
+              ],
+              readsFrom: {db.maintenances},
+            ).get();
+
+            debugPrint(
+                'DEV: maintenances dans la fenêtre (terrain 1) = ${rows.length}');
+            for (final r in rows.take(3)) {
+              final m = r.data;
+              debugPrint('  id=${m['id']} t=${m['terrain_id']} '
+                  'date=${DateTime.fromMillisecondsSinceEpoch(m['date'] as int)} '
+                  'M=${m['manto']} So=${m['sotto']} Si=${m['sil']} type=${m['type']}');
+            }
+
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Maintenance DEV insérée')),
+              );
+            }
+          } catch (e, st) {
+            debugPrint('DEV insert ERROR: $e\n$st');
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Erreur insert DEV: $e')),
+              );
+            }
+          }
+        },
       ),
       body: ListView(
         padding: const EdgeInsets.all(12),
@@ -37,14 +130,17 @@ class StatsScreen extends ConsumerWidget {
                 FilterChip(
                   label: const Text('Tous les terrains'),
                   selected: selected.isEmpty,
-                  onSelected: (_) => ref.read(selectedTerrainsProvider.notifier).clear(),
+                  onSelected: (_) =>
+                      ref.read(selectedTerrainsProvider.notifier).clear(),
                 ),
                 ...terrains.map((t) {
                   final selectedFlag = selected.contains(t.id);
                   return FilterChip(
                     label: Text('T${t.numero}'),
-                    selected: selectedFlag || selected.isEmpty,
-                    onSelected: (_) => ref.read(selectedTerrainsProvider.notifier).toggle(t.id),
+                    selected: selected.isEmpty ? true : selectedFlag,
+                    onSelected: (_) => ref
+                        .read(selectedTerrainsProvider.notifier)
+                        .toggle(t.id),
                   );
                 }),
               ],
@@ -73,7 +169,9 @@ class StatsScreen extends ConsumerWidget {
               final palette = _palette();
               final series = typeList.map((t) {
                 final color = palette[t.hashCode % palette.length];
-                final vals = uniqueBuckets.map((b) => (byBucket[b]?[t] ?? 0).toDouble()).toList();
+                final vals = uniqueBuckets
+                    .map((b) => (byBucket[b]?[t] ?? 0).toDouble())
+                    .toList();
                 return ChartSeries(id: t, color: color, values: vals);
               }).toList();
 
@@ -152,23 +250,31 @@ class _PeriodBar extends ConsumerWidget {
                 _PeriodButton(
                   label: 'Jour',
                   selected: period.kind == PeriodKind.day,
-                  onTap: () => ref.read(statsPeriodProvider.notifier).setKind(PeriodKind.day),
+                  onTap: () => ref
+                      .read(statsPeriodProvider.notifier)
+                      .setKind(PeriodKind.day),
                 ),
                 const SizedBox(width: 8),
                 _PeriodButton(
                   label: 'Semaine',
                   selected: period.kind == PeriodKind.week,
-                  onTap: () => ref.read(statsPeriodProvider.notifier).setKind(PeriodKind.week),
+                  onTap: () => ref
+                      .read(statsPeriodProvider.notifier)
+                      .setKind(PeriodKind.week),
                 ),
                 const SizedBox(width: 8),
                 _PeriodButton(
                   label: 'Mois',
                   selected: period.kind == PeriodKind.month,
-                  onTap: () => ref.read(statsPeriodProvider.notifier).setKind(PeriodKind.month),
+                  onTap: () => ref
+                      .read(statsPeriodProvider.notifier)
+                      .setKind(PeriodKind.month),
                 ),
                 const Spacer(),
                 IconButton(
-                  tooltip: period.kind == PeriodKind.day ? 'Choisir un jour' : 'Choisir un mois',
+                  tooltip: period.kind == PeriodKind.day
+                      ? 'Choisir un jour'
+                      : 'Choisir un mois',
                   icon: const Icon(Icons.date_range),
                   onPressed: () async {
                     final now = DateTime.now();
@@ -185,9 +291,11 @@ class _PeriodBar extends ConsumerWidget {
                       } else if (period.kind == PeriodKind.month) {
                         n.setMonth(picked);
                       } else if (period.kind == PeriodKind.week) {
-                        // semaine: on centre sur le jour choisi
                         final s = startOfWeek(picked);
-                        n.setCustomRange(s, endOfDay(DateTime.now()));
+                        final e = endOfWeek(picked); // ✅ fin de la même semaine
+                        ref
+                            .read(statsPeriodProvider.notifier)
+                            .setCustomRange(s, e);
                       }
                     }
                   },
@@ -199,7 +307,10 @@ class _PeriodBar extends ConsumerWidget {
               alignment: Alignment.centerLeft,
               child: Text(
                 _periodLabel(period),
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey[700]),
+                style: Theme.of(context)
+                    .textTheme
+                    .bodySmall
+                    ?.copyWith(color: Colors.grey[700]),
               ),
             ),
           ],
@@ -211,7 +322,8 @@ class _PeriodBar extends ConsumerWidget {
   String _periodLabel(StatsPeriodState p) {
     final s = p.range.startInclusive;
     final e = p.range.endInclusive;
-    String d(DateTime x) => '${x.day.toString().padLeft(2, '0')}/${x.month.toString().padLeft(2, '0')}/${x.year}';
+    String d(DateTime x) =>
+        '${x.day.toString().padLeft(2, '0')}/${x.month.toString().padLeft(2, '0')}/${x.year}';
     switch (p.kind) {
       case PeriodKind.day:
         return 'Période : ${d(s)}';
@@ -228,7 +340,8 @@ class _PeriodButton extends StatelessWidget {
   final String label;
   final bool selected;
   final VoidCallback onTap;
-  const _PeriodButton({required this.label, required this.selected, required this.onTap});
+  const _PeriodButton(
+      {required this.label, required this.selected, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
