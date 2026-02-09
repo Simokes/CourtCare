@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:drift/drift.dart' show Variable;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:court_care/presentation/providers/terrain_provider.dart'
+    show terrainsProvider;
+import 'package:court_care/presentation/providers/database_provider.dart' as dbp
+    show databaseProvider;
+import 'package:court_care/presentation/providers/maintenance_provider.dart'
+    show maintenanceProvider;
 import 'package:court_care/presentation/providers/stats_period_provider.dart';
 import 'package:court_care/presentation/providers/selected_terrains_provider.dart';
 import 'package:court_care/presentation/providers/stats_providers.dart';
-import 'package:court_care/presentation/providers/terrain_provider.dart';
 import 'package:court_care/presentation/widgets/grouped_bar_chart.dart';
-import 'package:court_care/presentation/providers/database_provider.dart'
-    show databaseProvider;
-
 import 'package:court_care/presentation/providers/maintenance_provider.dart'
     hide startOfDay, endOfDay, startOfWeek, startOfMonth, endOfMonth;
 
@@ -60,18 +62,27 @@ class StatsScreen extends ConsumerWidget {
             await ref.read(maintenanceProvider.notifier).addMaintenance(
                   terrainId: 1,
                   terrainType: TerrainType
-                      .terreBattue, // IMPORTANT pour autoriser manto/sotto
-                  type:
-                      'Recharge', // 'Recharge' OU 'Travaux' consomment des sacs
-                  commentaire: 'DEV insert depuis StatsScreen',
-                  sacsMantoUtilises: 2,
+                      .terreBattue, // important pour les règles matériaux
+                  type: 'Recharge', // consomme des sacs
+                  commentaire: 'DEV – 10/02/2026',
+                  sacsMantoUtilises: 3,
                   sacsSottomantoUtilises: 1,
                   sacsSiliceUtilises: 0,
+                  date: DateTime(2026, 2, 10, 12, 0,
+                      0), // ✅ DANS la fenêtre "février 2026"
                 );
-            debugPrint('DEV: addMaintenance OK');
-
+            debugPrint(
+                'DB(screen) hash = ${identityHashCode(ref.read(dbp.databaseProvider))}');
+            final totalRows = await (ref
+                .read(dbp.databaseProvider)
+                .customSelect('SELECT COUNT(*) AS c FROM maintenances',
+                    readsFrom: {
+                  ref.read(dbp.databaseProvider).maintenances
+                }).getSingle());
+            debugPrint(
+                'DEV: total maintenances en DB = ${totalRows.data['c']}');
             // 2) Relire immédiatement ce que la DB contient pour (terrain=1) DANS la fenêtre
-            final db = ref.read(databaseProvider);
+            final db = ref.read(dbp.databaseProvider);
             final rows = await db.customSelect(
               '''
         SELECT id, terrain_id, type, date,

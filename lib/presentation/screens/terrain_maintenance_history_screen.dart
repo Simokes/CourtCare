@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../domain/entities/maintenance.dart';
 import '../../domain/entities/terrain.dart';
 import '../providers/maintenance_provider.dart';
+import '../widgets/add_maintenance_sheet.dart';
 
 class TerrainMaintenanceHistoryScreen extends ConsumerWidget {
   final Terrain terrain;
@@ -16,11 +18,10 @@ class TerrainMaintenanceHistoryScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final now = DateTime.now();
 
-// ⬇️ bornes stables pour aujourd’hui
+    // Bornes stables
     final todayStart = startOfDay(now);
     final todayEnd = endOfDay(now);
 
-// ⬇️ bornes stables pour la semaine (lundi → fin de journée actuelle)
     final weekStart = startOfWeek(now);
     final weekEnd = endOfDay(now);
 
@@ -49,9 +50,9 @@ class TerrainMaintenanceHistoryScreen extends ConsumerWidget {
       ),
       body: Column(
         children: [
-          // -------------------------
-          // TOTALS CARDS
-          // -------------------------
+          // ------------------------------------------------------------------
+          // TOTALS
+          // ------------------------------------------------------------------
           Padding(
             padding: const EdgeInsets.all(12),
             child: Row(
@@ -70,9 +71,9 @@ class TerrainMaintenanceHistoryScreen extends ConsumerWidget {
             ),
           ),
 
-          // -------------------------
+          // ------------------------------------------------------------------
           // LISTE DES MAINTENANCES
-          // -------------------------
+          // ------------------------------------------------------------------
           Expanded(
             child: maintenancesAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
@@ -91,7 +92,7 @@ class TerrainMaintenanceHistoryScreen extends ConsumerWidget {
                     final m = maintenances[index];
                     return _MaintenanceCard(
                       maintenance: m,
-                      terrainId: terrain.id,
+                      terrain: terrain,
                     );
                   },
                 );
@@ -102,29 +103,18 @@ class TerrainMaintenanceHistoryScreen extends ConsumerWidget {
       ),
     );
   }
-
-  // -------------------------
-  // DATE FORMATTER
-  // -------------------------
-  String _formatDate(DateTime date) {
-    return '${date.day.toString().padLeft(2, '0')}/'
-        '${date.month.toString().padLeft(2, '0')}/'
-        '${date.year} '
-        '${date.hour.toString().padLeft(2, '0')}:'
-        '${date.minute.toString().padLeft(2, '0')}';
-  }
 }
 
 // ============================================================================
-// WIDGET : Maintenance Card
+// CARD AVEC SUPPRESSION + MODIFICATION
 // ============================================================================
 class _MaintenanceCard extends ConsumerWidget {
   final Maintenance maintenance;
-  final int terrainId;
+  final Terrain terrain;
 
   const _MaintenanceCard({
     required this.maintenance,
-    required this.terrainId,
+    required this.terrain,
   });
 
   @override
@@ -164,28 +154,60 @@ class _MaintenanceCard extends ConsumerWidget {
       onDismissed: (_) async {
         await ref.read(maintenanceProvider.notifier).deleteMaintenance(
               maintenanceId: maintenance.id,
-              terrainId: terrainId,
+              terrainId: terrain.id,
             );
       },
       child: Card(
-        elevation: 2,
         margin: const EdgeInsets.symmetric(vertical: 6),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: _MaintenanceContent(maintenance: maintenance),
+        elevation: 2,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        child: ListTile(
+          contentPadding: const EdgeInsets.all(12),
+
+          // Contenu existant
+          title: Text(
+            maintenance.type,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+          ),
+
+          subtitle: Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: _MaintenanceDetails(maintenance: maintenance),
+          ),
+
+          // -----------------------------
+          // ICÔNE MODIFIER (AJOUTÉ)
+          // -----------------------------
+          trailing: IconButton(
+            icon: const Icon(Icons.edit, color: Colors.blue),
+            onPressed: () {
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                builder: (_) => AddMaintenanceSheet(
+                  terrainNumero: terrain.numero,
+                  terrainId: terrain.id,
+                  terrainType: terrain.type,
+                  existing: maintenance, // MODE ÉDITION
+                ),
+              );
+            },
+          ),
         ),
       ),
     );
   }
 }
 
-class _MaintenanceContent extends StatelessWidget {
+// ============================================================================
+// DÉTAILS D'UNE MAINTENANCE (inchangé)
+// ============================================================================
+class _MaintenanceDetails extends StatelessWidget {
   final Maintenance maintenance;
 
-  const _MaintenanceContent({required this.maintenance});
+  const _MaintenanceDetails({required this.maintenance});
 
   @override
   Widget build(BuildContext context) {
@@ -200,51 +222,24 @@ class _MaintenanceContent extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Titre + date
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              maintenance.type,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-            ),
-            Text(
-              formatDate(maintenance.date),
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Colors.grey,
-                  ),
-            ),
-          ],
+        // Date
+        Text(
+          formatDate(maintenance.date),
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Colors.grey,
+              ),
         ),
 
         const SizedBox(height: 8),
 
-        // Quantités
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (maintenance.sacsMantoUtilises > 0)
-              _ChipInfo(
-                label: '${maintenance.sacsMantoUtilises} sac(s) Manto',
-                icon: Icons.layers,
-              ),
-            if (maintenance.sacsSottomantoUtilises > 0)
-              _ChipInfo(
-                label:
-                    '${maintenance.sacsSottomantoUtilises} sac(s) Sottomanto',
-                icon: Icons.layers_outlined,
-              ),
-            if (maintenance.sacsSiliceUtilises > 0)
-              _ChipInfo(
-                label: '${maintenance.sacsSiliceUtilises} sac(s) Silice',
-                icon: Icons.grain,
-              ),
-          ],
-        ),
+        // Consommation
+        if (maintenance.sacsMantoUtilises > 0)
+          _ChipInfo(label: '${maintenance.sacsMantoUtilises} sac(s) Manto'),
+        if (maintenance.sacsSottomantoUtilises > 0)
+          _ChipInfo(label: '${maintenance.sacsSottomantoUtilises} sac(s) Sottomanto'),
+        if (maintenance.sacsSiliceUtilises > 0)
+          _ChipInfo(label: '${maintenance.sacsSiliceUtilises} sac(s) Silice'),
 
-        // Commentaire
         if (maintenance.commentaire != null &&
             maintenance.commentaire!.isNotEmpty) ...[
           const SizedBox(height: 8),
@@ -258,35 +253,22 @@ class _MaintenanceContent extends StatelessWidget {
   }
 }
 
-// ============================================================================
-// WIDGET : Chip Info
-// ============================================================================
 class _ChipInfo extends StatelessWidget {
   final String label;
-  final IconData icon;
 
-  const _ChipInfo({
-    required this.label,
-    required this.icon,
-  });
+  const _ChipInfo({required this.label});
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),
-      child: Row(
-        children: [
-          Icon(icon, size: 18, color: Colors.grey.shade700),
-          const SizedBox(width: 6),
-          Text(label),
-        ],
-      ),
+      child: Text(label),
     );
   }
 }
 
 // ============================================================================
-// WIDGET : Totals Card
+// CARTE TOTAUX (inchangé)
 // ============================================================================
 class _TotalsCard extends StatelessWidget {
   final BuildContext context;
@@ -302,7 +284,6 @@ class _TotalsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Expanded(
-      // ⬅️ ajouté
       child: Card(
         margin: const EdgeInsets.only(bottom: 12, right: 8),
         child: Padding(

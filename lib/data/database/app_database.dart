@@ -105,6 +105,18 @@ class AppDatabase extends _$AppDatabase {
         .toList();
   }
 
+Future<Terrain> getTerrainById(int id) async {
+  final row = await (select(terrainTable)..where((t) => t.id.equals(id)))
+      .getSingle();
+
+  return Terrain(
+    id: row.id,
+    numero: row.numero,
+    type: TerrainType.values.byName(row.type),
+    statut: TerrainStatut.values.byName(row.statut),
+  );
+}
+
   // ------------------- MAINTENANCES -------------------
   Future<void> addMaintenance({
     required int terrainId,
@@ -166,6 +178,10 @@ class AppDatabase extends _$AppDatabase {
 
     return rows.length;
   }
+  Future<void> updateMaintenance(MaintenancesCompanion data) async {
+  await into(maintenances).insertOnConflictUpdate(data);
+}
+
 }
 
 // ============================================================================

@@ -1,19 +1,21 @@
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:drift/drift.dart' show Value;
 import '../../domain/entities/terrain.dart';
 import '../../domain/entities/maintenance.dart';
 import 'database_provider.dart';
 import 'package:court_care/data/database/app_database.dart';
 
-// -------------------------
-// HELPERS
-// -------------------------
+// ============================================================================
+// HELPERS (portée locale)
+// ============================================================================
 DateTime startOfDay(DateTime d) => DateTime(d.year, d.month, d.day);
-
 DateTime endOfDay(DateTime d) =>
     DateTime(d.year, d.month, d.day, 23, 59, 59, 999);
 
 DateTime startOfWeek(DateTime d) =>
     DateTime(d.year, d.month, d.day).subtract(Duration(days: d.weekday - 1));
+
 DateTime startOfMonth(DateTime d) => DateTime(d.year, d.month, 1);
 
 DateTime endOfMonth(DateTime d) {
@@ -22,6 +24,7 @@ DateTime endOfMonth(DateTime d) {
       : DateTime(d.year, d.month + 1, 1);
   return firstNextMonth.subtract(const Duration(milliseconds: 1));
 }
+
 // ============================================================================
 // PROVIDERS GLOBAUX
 // ============================================================================
@@ -41,39 +44,32 @@ final maintenanceCountProvider =
   );
 });
 
-// 🔥 LE PROVIDER QUI TE MANQUAIT — À L’EXTÉRIEUR DE LA CLASSE
-// ✅ Version réactive (Drift watch) — même nom, même signature que ta version actuelle
+/// Totaux réactifs sur une période [start..end]
 final sacsTotalsProvider = StreamProvider.family<
     ({int manto, int sottomanto, int silice}),
-    ({int terrainId, DateTime start, DateTime end})>(
-  (ref, params) {
+    ({int terrainId, DateTime start, DateTime end})>((ref, params) {
+  final db = ref.watch(databaseProvider);
+  return db.watchSacsTotals(
+    terrainId: params.terrainId,
+    start: params.start,
+    end: params.end,
+  );
+});
+
+/// Totaux mensuels sur l'ensemble des terrains
+final monthlyTotalsAllTerrainsProvider =
+    StreamProvider.family<({int manto, int sottomanto, int silice}), DateTime>(
+  (ref, anyDayInMonth) {
     final db = ref.watch(databaseProvider);
-    return db.watchSacsTotals(
-      terrainId: params.terrainId,
-      start: params.start,
-      end: params.end,
-    );
+    final start = startOfMonth(anyDayInMonth);
+    final end = endOfMonth(anyDayInMonth);
+    return db.watchSacsTotalsAllTerrains(start: start, end: end);
   },
 );
 
-/// Totaux mensuels du mois (tous terrains confondus)
-final monthlyTotalsAllTerrainsProvider =
-    StreamProvider.family<({int manto, int sottomanto, int silice}), DateTime>(
-        (ref, anyDayInMonth) {
-  final db = ref.watch(databaseProvider);
-
-  final start = startOfMonth(anyDayInMonth);
-  final end = endOfMonth(anyDayInMonth);
-
-  return db.watchSacsTotalsAllTerrains(
-    start: start,
-    end: end,
-  );
-});
 // ============================================================================
 // NOTIFIER
 // ============================================================================
-
 final maintenanceProvider =
     StateNotifierProvider<MaintenanceNotifier, AsyncValue<void>>(
   (ref) => MaintenanceNotifier(ref),
@@ -84,26 +80,26 @@ class MaintenanceNotifier extends StateNotifier<AsyncValue<void>> {
 
   MaintenanceNotifier(this.ref) : super(const AsyncData(null));
 
+  // --------------------------------------------------------------------------
+  // DELETE
+  // --------------------------------------------------------------------------
   Future<void> deleteMaintenance({
     required int maintenanceId,
     required int terrainId,
   }) async {
     state = const AsyncLoading();
-
     try {
       final db = ref.read(databaseProvider);
-
       await db.deleteMaintenance(maintenanceId);
 
-      // 🔄 Rafraîchissements
+      // Invalidation ciblée
       ref.invalidate(maintenancesByTerrainProvider(terrainId));
       ref.invalidate(maintenanceCountProvider(terrainId));
 
-// Exemple : re-calcule uniquement la clé concernée
       ref.invalidate(
         sacsTotalsProvider((
           terrainId: terrainId,
-          start: startOfDay(DateTime.now()), // ou la période en cours
+          start: startOfDay(DateTime.now()),
           end: endOfDay(DateTime.now()),
         )),
       );
@@ -115,8 +111,10 @@ class MaintenanceNotifier extends StateNotifier<AsyncValue<void>> {
     }
   }
 
+  // --------------------------------------------------------------------------
+  // ADD
+  // --------------------------------------------------------------------------
   Future<void> addMaintenance({
-    
     required int terrainId,
     required TerrainType terrainType,
     required String type,
@@ -124,13 +122,14 @@ class MaintenanceNotifier extends StateNotifier<AsyncValue<void>> {
     int sacsMantoUtilises = 0,
     int sacsSottomantoUtilises = 0,
     int sacsSiliceUtilises = 0,
+    DateTime? date,
   }) async {
     state = const AsyncLoading();
 
     try {
       final db = ref.read(databaseProvider);
 
-      // 🔒 RÈGLES MÉTIER
+      // === RÈGLES MÉTIER ===
       int manto = 0;
       int sottomanto = 0;
       int silice = 0;
@@ -138,7 +137,7 @@ class MaintenanceNotifier extends StateNotifier<AsyncValue<void>> {
       if (terrainType == TerrainType.terreBattue) {
         manto = sacsMantoUtilises;
         sottomanto = sacsSottomantoUtilises;
-      } else if (terrainType == TerrainType.synthetique) {
+      } else {
         silice = sacsSiliceUtilises;
       }
 
@@ -153,13 +152,13 @@ class MaintenanceNotifier extends StateNotifier<AsyncValue<void>> {
         terrainId: terrainId,
         type: type,
         commentaire: commentaire,
-        date: DateTime.now(),
+        date: date ?? DateTime.now(),
         sacsMantoUtilises: manto,
         sacsSottomantoUtilises: sottomanto,
         sacsSiliceUtilises: silice,
       );
 
-      // 🔄 Rafraîchissements
+      // Refresh automatique
       ref.invalidate(maintenancesByTerrainProvider(terrainId));
       ref.invalidate(maintenanceCountProvider(terrainId));
       ref.invalidate(sacsTotalsProvider);
@@ -170,10 +169,75 @@ class MaintenanceNotifier extends StateNotifier<AsyncValue<void>> {
       rethrow;
     }
   }
+
+  // --------------------------------------------------------------------------
+  // UPDATE (nouveau)
+  // --------------------------------------------------------------------------
+  Future<void> updateMaintenance({
+    required Maintenance existing,
+    required String type,
+    String? commentaire,
+    required int sacsMantoUtilises,
+    required int sacsSottomantoUtilises,
+    required int sacsSiliceUtilises,
+  }) async {
+    state = const AsyncLoading();
+
+    try {
+      final db = ref.read(databaseProvider);
+
+      // --- RÉCUP TERRAIN ---
+      final terrain = await db.getTerrainById(existing.terrainId);
+
+      // === RÈGLES MÉTIER IDENTIQUES À ADD ===
+      int manto = 0;
+      int sottomanto = 0;
+      int silice = 0;
+
+      if (terrain.type == TerrainType.terreBattue) {
+        manto = sacsMantoUtilises;
+        sottomanto = sacsSottomantoUtilises;
+      } else {
+        silice = sacsSiliceUtilises;
+      }
+
+      final utiliseSacs = type == 'Recharge' || type == 'Travaux';
+      if (!utiliseSacs) {
+        manto = 0;
+        sottomanto = 0;
+        silice = 0;
+      }
+
+      // === UPDATE SQL ===
+      final companion = MaintenancesCompanion(
+        id: Value(existing.id),
+        terrainId: Value(existing.terrainId),
+        type: Value(type),
+        commentaire: Value(commentaire),
+        date: Value(existing.date),
+        sacsMantoUtilises: Value(manto),
+        sacsSottomantoUtilises: Value(sottomanto),
+        sacsSiliceUtilises: Value(silice),
+      );
+
+      await db.updateMaintenance(companion);
+
+      // Refresh automatique (mêmes invalidations que delete)
+      ref.invalidate(maintenancesByTerrainProvider(existing.terrainId));
+      ref.invalidate(maintenanceCountProvider(existing.terrainId));
+      ref.invalidate(sacsTotalsProvider);
+
+      state = const AsyncData(null);
+    } catch (e, st) {
+      state = AsyncError(e, st);
+      rethrow;
+    }
+  }
 }
 
-/// Totaux mensuels pour un terrain donné, basés sur la date passée (n'importe quel jour du mois).
-/// Émet immédiatement, puis à chaque changement (insert/update/delete).
+// ============================================================================
+// Totaux mensuels par terrain
+// ============================================================================
 final monthlyTotalsByTerrainProvider = StreamProvider.family<
     ({int manto, int sottomanto, int silice}),
     ({int terrainId, DateTime anyDayInMonth})>((ref, params) {

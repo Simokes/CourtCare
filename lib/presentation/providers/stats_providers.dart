@@ -2,9 +2,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:court_care/data/database/app_database.dart';
 
 // ✅ providers locaux, en relatif (sans ambiguïté)
-import 'database_provider.dart';
-import 'stats_period_provider.dart';
-import 'selected_terrains_provider.dart';
+import 'package:court_care/presentation/providers/database_provider.dart';
+import 'package:court_care/presentation/providers/stats_period_provider.dart';
+import 'package:court_care/presentation/providers/selected_terrains_provider.dart';
 
 /// Série: sacs utilisés par jour (Manto/Sotto/Silice), multi-terrains
 final sacksSeriesProvider =

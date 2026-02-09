@@ -10,16 +10,20 @@ class PeriodRange {
 
 // === helpers existants ===
 DateTime startOfDay(DateTime d) => DateTime(d.year, d.month, d.day);
+
 DateTime endOfDay(DateTime d) =>
     DateTime(d.year, d.month, d.day, 23, 59, 59, 999);
+
 DateTime startOfWeek(DateTime d) =>
-    startOfDay(d).subtract(Duration(days: d.weekday - 1));
+    DateTime(d.year, d.month, d.day).subtract(Duration(days: d.weekday - 1));
+
 DateTime startOfMonth(DateTime d) => DateTime(d.year, d.month, 1);
+
 DateTime endOfMonth(DateTime d) {
-  final f = (d.month == 12)
+  final firstNextMonth = (d.month == 12)
       ? DateTime(d.year + 1, 1, 1)
       : DateTime(d.year, d.month + 1, 1);
-  return f.subtract(const Duration(milliseconds: 1));
+  return firstNextMonth.subtract(const Duration(milliseconds: 1));
 }
 
 // === AJOUT : fin de semaine stable (dimanche 23:59:59.999 si lundi=1) ===
