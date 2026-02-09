@@ -75,8 +75,7 @@ class _AddMaintenanceSheetState extends ConsumerState<AddMaintenanceSheet> {
     super.dispose();
   }
 
-  bool get _showSacs =>
-      selectedType == 'Recharge' || selectedType == 'Travaux';
+  bool get _showSacs => selectedType == 'Recharge' || selectedType == 'Travaux';
 
   Future<void> _saveMaintenance() async {
     if (selectedType == null) {
@@ -92,8 +91,7 @@ class _AddMaintenanceSheetState extends ConsumerState<AddMaintenanceSheet> {
     final silice = int.tryParse(sacsSiliceController.text) ?? 0;
 
     try {
-      final notifier =
-          ref.read(maintenance_prov.maintenanceProvider.notifier);
+      final notifier = ref.read(maintenance_prov.maintenanceProvider.notifier);
 
       if (widget.existing == null) {
         /// MODE CRÉATION
@@ -101,9 +99,8 @@ class _AddMaintenanceSheetState extends ConsumerState<AddMaintenanceSheet> {
           terrainId: widget.terrainId,
           terrainType: widget.terrainType,
           type: selectedType!,
-          commentaire: commentController.text.isEmpty
-              ? null
-              : commentController.text,
+          commentaire:
+              commentController.text.isEmpty ? null : commentController.text,
           sacsMantoUtilises: manto,
           sacsSottomantoUtilises: sotto,
           sacsSiliceUtilises: silice,
@@ -113,9 +110,8 @@ class _AddMaintenanceSheetState extends ConsumerState<AddMaintenanceSheet> {
         await notifier.updateMaintenance(
           existing: widget.existing!,
           type: selectedType!,
-          commentaire: commentController.text.isEmpty
-              ? null
-              : commentController.text,
+          commentaire:
+              commentController.text.isEmpty ? null : commentController.text,
           sacsMantoUtilises: manto,
           sacsSottomantoUtilises: sotto,
           sacsSiliceUtilises: silice,
@@ -126,8 +122,7 @@ class _AddMaintenanceSheetState extends ConsumerState<AddMaintenanceSheet> {
     } catch (e) {
       debugPrint('❌ Erreur enregistrement : $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Erreur lors de l’enregistrement')),
+        const SnackBar(content: Text('Erreur lors de l’enregistrement')),
       );
     }
   }
@@ -180,27 +175,23 @@ class _AddMaintenanceSheetState extends ConsumerState<AddMaintenanceSheet> {
           /// MATÉRIAUX (si type = recharge / travaux)
           if (_showSacs) ...[
             const SizedBox(height: 12),
-
             if (widget.terrainType == TerrainType.terreBattue) ...[
               TextField(
                 controller: sacsMantoController,
                 keyboardType: TextInputType.number,
-                decoration:
-                    const InputDecoration(labelText: 'Sacs Manto'),
+                decoration: const InputDecoration(labelText: 'Sacs Manto'),
               ),
               const SizedBox(height: 8),
               TextField(
                 controller: sacsSottomantoController,
                 keyboardType: TextInputType.number,
-                decoration:
-                    const InputDecoration(labelText: 'Sacs Sottomanto'),
+                decoration: const InputDecoration(labelText: 'Sacs Sottomanto'),
               ),
             ] else ...[
               TextField(
                 controller: sacsSiliceController,
                 keyboardType: TextInputType.number,
-                decoration:
-                    const InputDecoration(labelText: 'Sacs Silice'),
+                decoration: const InputDecoration(labelText: 'Sacs Silice'),
               ),
             ],
           ],

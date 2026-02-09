@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'maintenance_screen.dart';
-import '../providers/maintenance_provider.dart'; // <- pour accéder au provider monthly
-import 'stats_screen.dart';
+
+import '../widgets/app_drawer.dart';
+import '../providers/maintenance_provider.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -10,55 +10,16 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final now = DateTime.now();
-    // clé stable pour tout le mois courant :
     final monthKey = DateTime(now.year, now.month, 1);
 
     final monthlyTotals = ref.watch(monthlyTotalsAllTerrainsProvider(monthKey));
 
     return Scaffold(
       appBar: AppBar(title: const Text('CourtCare')),
-      drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            const DrawerHeader(
-              decoration: BoxDecoration(color: Colors.green),
-              child: Text(
-                'CourtCare',
-                style: TextStyle(color: Colors.white, fontSize: 20),
-              ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.build),
-              title: const Text('Maintenance'),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const MaintenanceScreen(),
-                  ),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.bar_chart),
-              title: const Text('Stats'),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const StatsScreen()),
-                );
-              },
-            ),
-          ],
-        ),
-      ),
+      drawer: const AppDrawer(),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          // -------- Carte Totaux du mois (tous terrains) --------
           Card(
             elevation: 2,
             shape:
@@ -82,33 +43,36 @@ class HomeScreen extends ConsumerWidget {
                     Text('Consommation du mois',
                         style: Theme.of(context).textTheme.titleMedium),
                     const SizedBox(height: 12),
+                    const _Legend(),
+                    const SizedBox(height: 8),
                     _MonthlyRow(
-                        icon: Icons.layers,
-                        label: 'Manto',
-                        value: t.manto,
-                        color: const Color(0xFF8D6E63)),
+                      icon: Icons.layers,
+                      label: 'Manto',
+                      value: t.manto,
+                      color: const Color(0xFF8D6E63),
+                    ),
                     _MonthlyRow(
-                        icon: Icons.layers_outlined,
-                        label: 'Sottomanto',
-                        value: t.sottomanto,
-                        color: const Color(0xFFFFA726)),
+                      icon: Icons.layers_outlined,
+                      label: 'Sottomanto',
+                      value: t.sottomanto,
+                      color: const Color(0xFFFFA726),
+                    ),
                     _MonthlyRow(
-                        icon: Icons.grain,
-                        label: 'Silice',
-                        value: t.silice,
-                        color: const Color(0xFFBDBDBD)),
+                      icon: Icons.grain,
+                      label: 'Silice',
+                      value: t.silice,
+                      color: const Color(0xFFBDBDBD),
+                    ),
                     if ((t.manto + t.sottomanto + t.silice) == 0) ...[
                       const SizedBox(height: 8),
-                      const Text('Aucune consommation ce mois.')
+                      const Text('Aucune consommation ce mois.'),
                     ],
                   ],
                 ),
               ),
             ),
           ),
-
           const SizedBox(height: 24),
-
           const Center(
             child: Text(
               'Bienvenue dans CourtCare',
@@ -117,6 +81,22 @@ class HomeScreen extends ConsumerWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _Legend extends StatelessWidget {
+  const _Legend();
+
+  @override
+  Widget build(BuildContext context) {
+    final style = Theme.of(context).textTheme.bodySmall;
+    return Row(
+      children: [
+        const Icon(Icons.info_outline, size: 16),
+        const SizedBox(width: 6),
+        Text('Totaux mensuels (tous terrains)', style: style),
+      ],
     );
   }
 }

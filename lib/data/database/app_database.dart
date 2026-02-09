@@ -105,17 +105,17 @@ class AppDatabase extends _$AppDatabase {
         .toList();
   }
 
-Future<Terrain> getTerrainById(int id) async {
-  final row = await (select(terrainTable)..where((t) => t.id.equals(id)))
-      .getSingle();
+  Future<Terrain> getTerrainById(int id) async {
+    final row =
+        await (select(terrainTable)..where((t) => t.id.equals(id))).getSingle();
 
-  return Terrain(
-    id: row.id,
-    numero: row.numero,
-    type: TerrainType.values.byName(row.type),
-    statut: TerrainStatut.values.byName(row.statut),
-  );
-}
+    return Terrain(
+      id: row.id,
+      numero: row.numero,
+      type: TerrainType.values.byName(row.type),
+      statut: TerrainStatut.values.byName(row.statut),
+    );
+  }
 
   // ------------------- MAINTENANCES -------------------
   Future<void> addMaintenance({
@@ -178,10 +178,10 @@ Future<Terrain> getTerrainById(int id) async {
 
     return rows.length;
   }
-  Future<void> updateMaintenance(MaintenancesCompanion data) async {
-  await into(maintenances).insertOnConflictUpdate(data);
-}
 
+  Future<void> updateMaintenance(MaintenancesCompanion data) async {
+    await into(maintenances).insertOnConflictUpdate(data);
+  }
 }
 
 // ============================================================================
@@ -289,16 +289,16 @@ class MaintenanceTypeRow {
 
 extension StatsSeriesQueries on AppDatabase {
   // Group by day (YYYY-MM-DD) within range, optional terrain filter
- Stream<List<SacsTotalsPoint>> watchDailySeries({
-  required DateTime start,
-  required DateTime end,
-  int? terrainId,
-}) {
-  final whereTerrain = terrainId != null ? ' AND terrain_id = ?' : '';
-  // Affichage buckets : convertir msEpoch -> datetime(x/1000,'unixepoch')
-  const dateExpr = "datetime(date/1000, 'unixepoch')";
+  Stream<List<SacsTotalsPoint>> watchDailySeries({
+    required DateTime start,
+    required DateTime end,
+    int? terrainId,
+  }) {
+    final whereTerrain = terrainId != null ? ' AND terrain_id = ?' : '';
+    // Affichage buckets : convertir msEpoch -> datetime(x/1000,'unixepoch')
+    const dateExpr = "datetime(date/1000, 'unixepoch')";
 
-  final sql = '''
+    final sql = '''
     SELECT strftime('%Y-%m-%d', $dateExpr) AS bucket,
            COALESCE(SUM(sacs_manto_utilises), 0) AS manto,
            COALESCE(SUM(sacs_sottomanto_utilises), 0) AS sotto,
@@ -309,34 +309,34 @@ extension StatsSeriesQueries on AppDatabase {
     ORDER BY bucket ASC;
   ''';
 
-  final vars = <Variable>[
-    Variable<int>(start.millisecondsSinceEpoch),
-    Variable<int>(end.millisecondsSinceEpoch),
-    if (terrainId != null) Variable<int>(terrainId),
-  ];
+    final vars = <Variable>[
+      Variable<int>(start.millisecondsSinceEpoch),
+      Variable<int>(end.millisecondsSinceEpoch),
+      if (terrainId != null) Variable<int>(terrainId),
+    ];
 
-  return customSelect(sql, variables: vars, readsFrom: {maintenances})
-      .watch()
-      .map((rows) => rows
-          .map((r) => SacsTotalsPoint(
-                bucket: r.read<String>('bucket'),
-                manto: r.read<int>('manto'),
-                sottomanto: r.read<int>('sotto'),
-                silice: r.read<int>('sil'),
-              ))
-          .toList());
-}
+    return customSelect(sql, variables: vars, readsFrom: {maintenances})
+        .watch()
+        .map((rows) => rows
+            .map((r) => SacsTotalsPoint(
+                  bucket: r.read<String>('bucket'),
+                  manto: r.read<int>('manto'),
+                  sottomanto: r.read<int>('sotto'),
+                  silice: r.read<int>('sil'),
+                ))
+            .toList());
+  }
 
   // Group by week (YYYY-Www) within range
   Stream<List<SacsTotalsPoint>> watchWeeklySeries({
-  required DateTime start,
-  required DateTime end,
-  int? terrainId,
-}) {
-  final whereTerrain = terrainId != null ? ' AND terrain_id = ?' : '';
-  const dateExpr = "datetime(date/1000, 'unixepoch')";
+    required DateTime start,
+    required DateTime end,
+    int? terrainId,
+  }) {
+    final whereTerrain = terrainId != null ? ' AND terrain_id = ?' : '';
+    const dateExpr = "datetime(date/1000, 'unixepoch')";
 
-  final sql = '''
+    final sql = '''
     SELECT strftime('%Y', $dateExpr) || '-W' || strftime('%W', $dateExpr) AS bucket,
            COALESCE(SUM(sacs_manto_utilises), 0) AS manto,
            COALESCE(SUM(sacs_sottomanto_utilises), 0) AS sotto,
@@ -347,34 +347,67 @@ extension StatsSeriesQueries on AppDatabase {
     ORDER BY bucket ASC;
   ''';
 
-  final vars = <Variable>[
-    Variable<int>(start.millisecondsSinceEpoch),
-    Variable<int>(end.millisecondsSinceEpoch),
-    if (terrainId != null) Variable<int>(terrainId),
-  ];
+    final vars = <Variable>[
+      Variable<int>(start.millisecondsSinceEpoch),
+      Variable<int>(end.millisecondsSinceEpoch),
+      if (terrainId != null) Variable<int>(terrainId),
+    ];
 
-  return customSelect(sql, variables: vars, readsFrom: {maintenances})
-      .watch()
-      .map((rows) => rows
-          .map((r) => SacsTotalsPoint(
-                bucket: r.read<String>('bucket'),
-                manto: r.read<int>('manto'),
-                sottomanto: r.read<int>('sotto'),
-                silice: r.read<int>('sil'),
-              ))
-          .toList());
+    return customSelect(sql, variables: vars, readsFrom: {maintenances})
+        .watch()
+        .map((rows) => rows
+            .map((r) => SacsTotalsPoint(
+                  bucket: r.read<String>('bucket'),
+                  manto: r.read<int>('manto'),
+                  sottomanto: r.read<int>('sotto'),
+                  silice: r.read<int>('sil'),
+                ))
+            .toList());
+  }
+
+// ============================================================================
+// WATCH : Maintenances filtrées
+// ============================================================================
+Stream<List<MaintenanceEntity>> watchFilteredMaintenances({
+  DateTime? start,
+  DateTime? end,
+  String? type,
+  int? terrainId,
+}) {
+  final q = select(maintenances);
+
+  if (start != null && end != null) {
+    q.where(
+      (m) => m.date.isBetween(
+        Variable<DateTime>(start),
+        Variable<DateTime>(end),
+      ),
+    );
+  }
+
+  if (type != null) {
+    q.where((m) => m.type.equals(type));
+  }
+
+  if (terrainId != null) {
+    q.where((m) => m.terrainId.equals(terrainId));
+  }
+
+  q.orderBy([(m) => OrderingTerm.desc(m.date)]);
+
+  return q.watch();
 }
 
   // Group by month (YYYY-MM) within range
- Stream<List<SacsTotalsPoint>> watchMonthlySeries({
-  required DateTime start,
-  required DateTime end,
-  int? terrainId,
-}) {
-  final whereTerrain = terrainId != null ? ' AND terrain_id = ?' : '';
-  const dateExpr = "datetime(date/1000, 'unixepoch')";
+  Stream<List<SacsTotalsPoint>> watchMonthlySeries({
+    required DateTime start,
+    required DateTime end,
+    int? terrainId,
+  }) {
+    final whereTerrain = terrainId != null ? ' AND terrain_id = ?' : '';
+    const dateExpr = "datetime(date/1000, 'unixepoch')";
 
-  final sql = '''
+    final sql = '''
     SELECT strftime('%Y-%m', $dateExpr) AS bucket,
            COALESCE(SUM(sacs_manto_utilises), 0) AS manto,
            COALESCE(SUM(sacs_sottomanto_utilises), 0) AS sotto,
@@ -385,39 +418,39 @@ extension StatsSeriesQueries on AppDatabase {
     ORDER BY bucket ASC;
   ''';
 
-  final vars = <Variable>[
-    Variable<int>(start.millisecondsSinceEpoch),
-    Variable<int>(end.millisecondsSinceEpoch),
-    if (terrainId != null) Variable<int>(terrainId),
-  ];
+    final vars = <Variable>[
+      Variable<int>(start.millisecondsSinceEpoch),
+      Variable<int>(end.millisecondsSinceEpoch),
+      if (terrainId != null) Variable<int>(terrainId),
+    ];
 
-  return customSelect(sql, variables: vars, readsFrom: {maintenances})
-      .watch()
-      .map((rows) => rows
-          .map((r) => SacsTotalsPoint(
-                bucket: r.read<String>('bucket'),
-                manto: r.read<int>('manto'),
-                sottomanto: r.read<int>('sotto'),
-                silice: r.read<int>('sil'),
-              ))
-          .toList());
-}
+    return customSelect(sql, variables: vars, readsFrom: {maintenances})
+        .watch()
+        .map((rows) => rows
+            .map((r) => SacsTotalsPoint(
+                  bucket: r.read<String>('bucket'),
+                  manto: r.read<int>('manto'),
+                  sottomanto: r.read<int>('sotto'),
+                  silice: r.read<int>('sil'),
+                ))
+            .toList());
+  }
 }
 
 extension StatsSeriesQueriesMulti on AppDatabase {
   /// Série journalière des sacs (Manto/Sotto/Silice), filtrable sur une liste de terrains.
   /// terrainIds vide => tous les terrains.
   Stream<List<SacsTotalsPoint>> watchDailySacsSeriesForTerrains({
-  required DateTime start,
-  required DateTime end,
-  required List<int> terrainIds, // vide => tous
-}) {
-  const dateExpr = "datetime(date/1000, 'unixepoch')";
-  final inClause = terrainIds.isNotEmpty
-      ? ' AND terrain_id IN (${List.filled(terrainIds.length, '?').join(',')})'
-      : '';
+    required DateTime start,
+    required DateTime end,
+    required List<int> terrainIds, // vide => tous
+  }) {
+    const dateExpr = "datetime(date/1000, 'unixepoch')";
+    final inClause = terrainIds.isNotEmpty
+        ? ' AND terrain_id IN (${List.filled(terrainIds.length, '?').join(',')})'
+        : '';
 
-  final sql = '''
+    final sql = '''
     SELECT strftime('%Y-%m-%d', $dateExpr) AS bucket,
            COALESCE(SUM(sacs_manto_utilises), 0) AS manto,
            COALESCE(SUM(sacs_sottomanto_utilises), 0) AS sotto,
@@ -428,37 +461,37 @@ extension StatsSeriesQueriesMulti on AppDatabase {
     ORDER BY bucket ASC;
   ''';
 
-  final vars = <Variable>[
-    Variable<int>(start.millisecondsSinceEpoch),
-    Variable<int>(end.millisecondsSinceEpoch),
-    ...terrainIds.map((e) => Variable<int>(e)),
-  ];
+    final vars = <Variable>[
+      Variable<int>(start.millisecondsSinceEpoch),
+      Variable<int>(end.millisecondsSinceEpoch),
+      ...terrainIds.map((e) => Variable<int>(e)),
+    ];
 
-  return customSelect(sql, variables: vars, readsFrom: {maintenances})
-      .watch()
-      .map((rows) => rows
-          .map((r) => SacsTotalsPoint(
-                bucket: r.read<String>('bucket'),
-                manto: r.read<int>('manto'),
-                sottomanto: r.read<int>('sotto'),
-                silice: r.read<int>('sil'),
-              ))
-          .toList());
-}
+    return customSelect(sql, variables: vars, readsFrom: {maintenances})
+        .watch()
+        .map((rows) => rows
+            .map((r) => SacsTotalsPoint(
+                  bucket: r.read<String>('bucket'),
+                  manto: r.read<int>('manto'),
+                  sottomanto: r.read<int>('sotto'),
+                  silice: r.read<int>('sil'),
+                ))
+            .toList());
+  }
 
   /// Série journalière du nombre de maintenances par type, multi-terrains.
   /// terrainIds vide => tous les terrains.
   Stream<List<MaintenanceTypeRow>> watchDailyMaintenanceTypeCounts({
-  required DateTime start,
-  required DateTime end,
-  required List<int> terrainIds, // vide => tous
-}) {
-  const dateExpr = "datetime(date/1000, 'unixepoch')";
-  final inClause = terrainIds.isNotEmpty
-      ? ' AND terrain_id IN (${List.filled(terrainIds.length, '?').join(',')})'
-      : '';
+    required DateTime start,
+    required DateTime end,
+    required List<int> terrainIds, // vide => tous
+  }) {
+    const dateExpr = "datetime(date/1000, 'unixepoch')";
+    final inClause = terrainIds.isNotEmpty
+        ? ' AND terrain_id IN (${List.filled(terrainIds.length, '?').join(',')})'
+        : '';
 
-  final sql = '''
+    final sql = '''
     SELECT strftime('%Y-%m-%d', $dateExpr) AS bucket,
            type AS mtype,
            COUNT(*) AS cnt
@@ -468,22 +501,22 @@ extension StatsSeriesQueriesMulti on AppDatabase {
     ORDER BY bucket ASC, mtype ASC;
   ''';
 
-  final vars = <Variable>[
-    Variable<int>(start.millisecondsSinceEpoch),
-    Variable<int>(end.millisecondsSinceEpoch),
-    ...terrainIds.map((e) => Variable<int>(e)),
-  ];
+    final vars = <Variable>[
+      Variable<int>(start.millisecondsSinceEpoch),
+      Variable<int>(end.millisecondsSinceEpoch),
+      ...terrainIds.map((e) => Variable<int>(e)),
+    ];
 
-  return customSelect(sql, variables: vars, readsFrom: {maintenances})
-      .watch()
-      .map((rows) => rows
-          .map((r) => MaintenanceTypeRow(
-                bucket: r.read<String>('bucket'),
-                type: r.read<String>('mtype'),
-                count: r.read<int>('cnt'),
-              ))
-          .toList());
-}
+    return customSelect(sql, variables: vars, readsFrom: {maintenances})
+        .watch()
+        .map((rows) => rows
+            .map((r) => MaintenanceTypeRow(
+                  bucket: r.read<String>('bucket'),
+                  type: r.read<String>('mtype'),
+                  count: r.read<int>('cnt'),
+                ))
+            .toList());
+  }
 }
 
 // ------------------- DB CONNECTION -------------------
