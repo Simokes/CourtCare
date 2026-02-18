@@ -9,7 +9,12 @@ dependencies:
   flutter:
     sdk: flutter
 
+  # Localisation Flutter (FR, EN, etc.)
+  flutter_localizations:
+    sdk: flutter
 
+  # formats de dates (FR)
+  intl: ^0.20.2
 
   # State management
   flutter_riverpod: ^2.5.1
@@ -19,9 +24,6 @@ dependencies:
   sqlite3_flutter_libs: ^0.5.20
   path_provider: ^2.1.2
   path: ^1.9.0
-
-  # Utils
-  intl: ^0.19.0
 
 dev_dependencies:
   flutter_test:

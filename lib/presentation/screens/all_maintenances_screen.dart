@@ -7,7 +7,10 @@ import '../widgets/maintenance_filters_sheet.dart';
 import '../widgets/filter_pill.dart';
 import '../widgets/filters_bar.dart';
 import '../providers/maintenance_filters_provider.dart';
-
+import '../utils/date_formatting.dart';
+import '../widgets/add_maintenance_sheet.dart';
+import '../../domain/entities/maintenance.dart' as domain;
+import '../providers/database_provider.dart';
 
 class AllMaintenancesScreen extends ConsumerWidget {
   const AllMaintenancesScreen({super.key});
@@ -81,19 +84,43 @@ class AllMaintenancesScreen extends ConsumerWidget {
                 return ListView.separated(
                   itemCount: items.length,
                   separatorBuilder: (_, __) => const Divider(height: 0),
-                  itemBuilder: (_, i) {
-                    final m = items[i]; // MaintenanceEntity
+                  itemBuilder: (context, i) {
+                    final m = items[i]; // MaintenanceEntity (Drift)
+
+                    final existing = domain.Maintenance(
+                      id: m.id,
+                      terrainId: m.terrainId,
+                      type: m.type,
+                      commentaire: m.commentaire,
+                      date: m.date,
+                      sacsMantoUtilises: m.sacsMantoUtilises,
+                      sacsSottomantoUtilises: m.sacsSottomantoUtilises,
+                      sacsSiliceUtilises: m.sacsSiliceUtilises,
+                    );
+
                     return ListTile(
                       leading: _MaintenanceTypeIcon(type: m.type),
                       title: Text(m.type),
                       subtitle: Text(
-                        '${_fmt(m.date)} • Terrain ${m.terrainId}'
+                        '${formatHumanizedFr(m.date)} • Terrain ${m.terrainId}'
                         '${_sacsResume(m.sacsMantoUtilises, m.sacsSottomantoUtilises, m.sacsSiliceUtilises)}',
                       ),
                       trailing: IconButton(
                         icon: const Icon(Icons.edit_outlined),
-                        onPressed: () {
-                          // TODO: ouvrir ta bottom sheet d’édition si tu veux
+                        onPressed: () async {
+                          final db = ref.read(databaseProvider);
+                          final terrain = await db.getTerrainById(m.terrainId);
+                          if (!context.mounted) return;
+                          showModalBottomSheet(
+                            context: context,
+                            isScrollControlled: true,
+                            builder: (_) => AddMaintenanceSheet(
+                              terrainNumero: terrain.numero,
+                              terrainId: terrain.id,
+                              terrainType: terrain.type,
+                              existing: existing,
+                            ),
+                          );
                         },
                       ),
                     );
